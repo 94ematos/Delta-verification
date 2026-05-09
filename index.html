@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Palace Market</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --gold: #D4AF37;
+  --gold-light: #F5E27A;
+  --gold-dark: #A8861F;
+  --red: #C0392B;
+  --red-light: #E74C3C;
+  --white: #FFFFFF;
+  --off-white: #FAF8F3;
+  --bg: #0D0A06;
+  --bg2: #161208;
+  --bg3: #1E1710;
+  --surface: #221C0E;
+  --surface2: #2A2214;
+  --border: rgba(212,175,55,0.18);
+  --text: #F5F0E8;
+  --text2: #B8A878;
+  --text3: #7A6C48;
+  --shadow-gold: 0 4px 32px rgba(212,175,55,0.18);
+  --shadow-red: 0 4px 32px rgba(192,57,43,0.22);
+  --radius: 18px;
+  --radius-sm: 10px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; overflow:hidden; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  position: relative;
+  max-width: 430px;
+  margin: 0 auto;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* ─── BACKGROUND PATTERN ─── */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(212,175,55,0.10) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 30% at 100% 110%, rgba(192,57,43,0.08) 0%, transparent 60%);
+  pointer-events:none; z-index:0;
+}
+
+/* ─── SCREENS ─── */
+.screen {
+  position: absolute; inset:0;
+  display: none; flex-direction: column;
+  overflow: hidden; z-index:1;
+  animation: fadeIn 0.35s ease;
+}
+.screen.active { display:flex; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── SPLASH ─── */
+#screen-splash {
+  align-items:center; justify-content:center;
+  background: radial-gradient(ellipse at center, #1A1208 0%, #080503 100%);
+}
+.splash-logo {
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+.splash-crown {
+  font-size:64px; animation: float 3s ease-in-out infinite;
+}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.splash-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:48px; font-weight:700;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  letter-spacing:3px;
+}
+.splash-sub {
+  font-size:13px; color:var(--text3); letter-spacing:4px; text-transform:uppercase;
+}
+.splash-loader {
+  width:200px; height:2px; background:var(--surface2); border-radius:2px; overflow:hidden;
+  margin-top:48px;
+}
+.splash-loader-bar {
+  height:100%; background:linear-gradient(90deg, var(--gold-dark), var(--gold-light));
+  animation: load 2.2s ease forwards;
+}
+@keyframes load { from{width:0} to{width:100%} }
+
+/* ─── AUTH ─── */
+#screen-auth {
+  align-items:center; justify-content:center; padding:32px;
+  background: radial-gradient(ellipse at 30% 0%, rgba(212,175,55,0.08) 0%, transparent 60%);
+}
+.auth-card {
+  width:100%; background:var(--surface); border:1px solid var(--border);
+  border-radius:24px; padding:36px 28px; text-align:center;
+  box-shadow: var(--shadow-gold), inset 0 1px 0 rgba(212,175,55,0.12);
+}
+.auth-icon { font-size:52px; margin-bottom:20px; }
+.auth-title {
+  font-family:'Cormorant Garamond',serif; font-size:30px; font-weight:700;
+  color:var(--gold); margin-bottom:8px;
+}
+.auth-desc { font-size:14px; color:var(--text2); line-height:1.6; margin-bottom:32px; }
+.btn-delta {
+  width:100%; padding:16px; border:none; border-radius:var(--radius);
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold), var(--gold-light));
+  color:#000; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600;
+  cursor:pointer; letter-spacing:0.5px;
+  box-shadow: 0 4px 20px rgba(212,175,55,0.4);
+  transition:all 0.2s; position:relative; overflow:hidden;
+}
+.btn-delta::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.3) 60%, transparent 70%);
+  transform:translateX(-100%); transition:transform 0.4s;
+}
+.btn-delta:hover::after { transform:translateX(100%); }
+.btn-delta:active { transform:scale(0.97); }
+
+/* ─── ROLE SELECT ─── */
+#screen-role { padding:32px 20px; justify-content:center; }
+.role-header { text-align:center; margin-bottom:32px; }
+.role-header h2 {
+  font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:700; color:var(--gold);
+}
+.role-header p { font-size:13px; color:var(--text2); margin-top:6px; }
+.role-cards { display:flex; flex-direction:column; gap:14px; }
+.role-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:20px;
+  padding:20px; display:flex; align-items:center; gap:16px; cursor:pointer;
+  transition:all 0.25s; position:relative; overflow:hidden;
+}
+.role-card::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:var(--gold); border-radius:3px 0 0 3px; opacity:0; transition:opacity 0.2s;
+}
+.role-card:hover::before, .role-card:active::before { opacity:1; }
+.role-card:hover { background:var(--surface2); border-color:rgba(212,175,55,0.35); transform:translateX(4px); }
+.role-icon { font-size:36px; width:56px; height:56px; background:var(--surface2); border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.role-info h3 { font-size:16px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.role-info p { font-size:12px; color:var(--text2); line-height:1.4; }
+.role-arrow { margin-left:auto; color:var(--gold); font-size:18px; opacity:0.6; }
+
+/* ─── TOP BAR ─── */
+.topbar {
+  padding:14px 20px 10px;
+  display:flex; align-items:center; gap:12px;
+  background:linear-gradient(to bottom, var(--bg2), transparent);
+  flex-shrink:0; z-index:10;
+}
+.topbar-logo {
+  font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:700;
+  background:linear-gradient(135deg, var(--gold-light), var(--gold));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  flex:1;
+}
+.topbar-icon-btn {
+  width:40px; height:40px; border:none; background:var(--surface); border-radius:12px;
+  color:var(--text2); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--border); transition:all 0.2s; position:relative;
+}
+.topbar-icon-btn:hover { background:var(--surface2); color:var(--gold); }
+.badge {
+  position:absolute; top:-4px; right:-4px; background:var(--red); color:#fff;
+  font-size:9px; font-weight:700; width:16px; height:16px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; border:2px solid var(--bg);
+}
+
+/* ─── SCROLL AREA ─── */
+.scroll-area {
+  flex:1; overflow-y:auto; overflow-x:hidden;
+  -webkit-overflow-scrolling:touch; scroll-behavior:smooth;
+}
+.scroll-area::-webkit-scrollbar { width:3px; }
+.scroll-area::-webkit-scrollbar-thumb { background:var(--surface2); border-radius:3px; }
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav {
+  height:70px; background:var(--bg2); border-top:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-around;
+  padding:0 8px 8px; flex-shrink:0;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+}
+.nav-item {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  cursor:pointer; padding:8px 12px; border-radius:12px;
+  transition:all 0.2s; flex:1;
+}
+.nav-item.active { background:rgba(212,175,55,0.08); }
+.nav-icon { font-size:22px; transition:transform 0.2s; }
+.nav-item.active .nav-icon { transform:scale(1.1); }
+.nav-label { font-size:10px; color:var(--text3); transition:color 0.2s; letter-spacing:0.3px; }
+.nav-item.active .nav-label { color:var(--gold); font-weight:600; }
+
+/* ─── HOME SCREEN ─── */
+.home-hero {
+  margin:8px 16px 0; padding:22px; background:var(--surface);
+  border-radius:22px; border:1px solid var(--border);
+  background:linear-gradient(135deg, var(--surface) 0%, #1A1408 100%);
+  position:relative; overflow:hidden;
+}
+.home-hero::after {
+  content:'👑'; position:absolute; right:-10px; bottom:-10px; font-size:80px; opacity:0.06;
+}
+.home-greeting { font-size:13px; color:var(--text2); margin-bottom:4px; }
+.home-name { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:var(--gold); margin-bottom:14px; }
+.home-balance-label { font-size:11px; color:var(--text3); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+.home-balance { font-size:32px; font-weight:600; color:var(--text); }
+.home-balance span { font-size:14px; color:var(--text2); margin-left:6px; }
+
+.section-title {
+  font-size:13px; font-weight:600; color:var(--text2); letter-spacing:1.5px;
+  text-transform:uppercase; padding:20px 20px 10px;
+}
+
+/* ─── CATEGORIES ─── */
+.cats-scroll {
+  display:flex; gap:10px; padding:0 16px 4px; overflow-x:auto;
+}
+.cats-scroll::-webkit-scrollbar { display:none; }
+.cat-chip {
+  flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:14px 16px; background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; cursor:pointer; transition:all 0.2s; min-width:72px;
+}
+.cat-chip:hover, .cat-chip.active {
+  background:var(--surface2); border-color:var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+.cat-chip-icon { font-size:24px; }
+.cat-chip-label { font-size:11px; color:var(--text2); white-space:nowrap; font-weight:500; }
+.cat-chip.active .cat-chip-label { color:var(--gold); }
+
+/* ─── PRODUCT GRID ─── */
+.prod-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:4px 16px 16px;
+}
+.prod-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:18px;
+  overflow:hidden; cursor:pointer; transition:all 0.25s;
+  position:relative;
+}
+.prod-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-gold); border-color:rgba(212,175,55,0.3); }
+.prod-img {
+  width:100%; height:120px; object-fit:cover;
+  background:var(--surface2); display:flex; align-items:center; justify-content:center;
+  font-size:42px;
+}
+.prod-body { padding:12px; }
+.prod-name { font-size:13px; font-weight:600; color:var(--text); margin-bottom:4px; line-height:1.3; }
+.prod-store { font-size:11px; color:var(--text3); margin-bottom:8px; }
+.prod-footer { display:flex; align-items:center; justify-content:space-between; }
+.prod-price { font-size:13px; font-weight:700; color:var(--gold); }
+.prod-price-fcfa { font-size:10px; color:var(--text3); }
+.prod-add {
+  width:28px; height:28px; background:var(--gold); border:none; border-radius:8px;
+  color:#000; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-weight:700; transition:all 0.2s;
+}
+.prod-add:hover { background:var(--gold-light); transform:scale(1.1); }
+
+/* ─── RESTAURANT CARDS ─── */
+.rest-scroll {
+  display:flex; gap:12px; padding:0 16px 8px; overflow-x:auto;
+}
+.rest-scroll::-webkit-scrollbar { display:none; }
+.rest-card {
+  flex-shrink:0; width:200px; background:var(--surface); border:1px solid var(--border);
+  border-radius:18px; overflow:hidden; cursor:pointer; transition:all 0.25s;
+}
+.rest-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-gold); }
+.rest-img {
+  width:100%; height:100px; background:var(--surface2); display:flex;
+  align-items:center; justify-content:center; font-size:48px;
+}
+.rest-body { padding:12px; }
+.rest-name { font-size:14px; font-weight:600; margin-bottom:4px; }
+.rest-meta { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--text3); }
+.rest-rating { color:var(--gold); font-weight:600; }
+.rest-badge {
+  display:inline-block; padding:3px 8px; background:rgba(212,175,55,0.12);
+  border:1px solid rgba(212,175,55,0.25); border-radius:20px;
+  font-size:10px; color:var(--gold); font-weight:600;
+}
+
+/* ─── JACKPOT BANNER ─── */
+.jackpot-banner {
+  margin:4px 16px 4px; padding:18px 20px; border-radius:20px;
+  background:linear-gradient(135deg, #1A0808 0%, #2A0E0E 50%, #1A0808 100%);
+  border:1px solid rgba(192,57,43,0.4); position:relative; overflow:hidden; cursor:pointer;
+}
+.jackpot-banner::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 80% 50%, rgba(192,57,43,0.15) 0%, transparent 60%);
+}
+.jackpot-inner { display:flex; align-items:center; gap:14px; position:relative; }
+.jackpot-icon { font-size:40px; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+.jackpot-info { flex:1; }
+.jackpot-label { font-size:10px; letter-spacing:2px; color:var(--red-light); text-transform:uppercase; font-weight:600; margin-bottom:3px; }
+.jackpot-title { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:700; color:var(--white); margin-bottom:2px; }
+.jackpot-sub { font-size:11px; color:rgba(255,255,255,0.5); }
+.jackpot-timer { text-align:center; }
+.jackpot-time { font-size:22px; font-weight:700; color:var(--red-light); font-variant-numeric:tabular-nums; }
+.jackpot-tickets { font-size:10px; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* ─── EMA AI ─── */
+.ema-fab {
+  position:fixed; bottom:88px; right:20px; z-index:100;
+  width:52px; height:52px; border-radius:50%;
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold));
+  border:none; cursor:pointer; font-size:24px;
+  box-shadow: 0 4px 20px rgba(212,175,55,0.5);
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.3s; animation: emaPulse 3s infinite;
+}
+@keyframes emaPulse {
+  0%,100%{box-shadow:0 4px 20px rgba(212,175,55,0.5)}
+  50%{box-shadow:0 4px 32px rgba(212,175,55,0.8), 0 0 0 8px rgba(212,175,55,0.1)}
+}
+.ema-fab:hover { transform:scale(1.08); }
+
+/* ─── CHAT SCREEN ─── */
+#screen-chat .chat-header {
+  padding:16px 20px; display:flex; align-items:center; gap:12px;
+  border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.chat-back { font-size:22px; cursor:pointer; color:var(--gold); }
+.chat-avatar { width:40px; height:40px; border-radius:50%; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:20px; }
+.chat-contact h3 { font-size:15px; font-weight:600; }
+.chat-contact p { font-size:11px; color:var(--text3); }
+.chat-online { display:inline-block; width:8px; height:8px; background:#2ECC71; border-radius:50%; margin-right:4px; }
+.chat-msgs { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+.chat-msgs::-webkit-scrollbar { width:2px; }
+.msg { max-width:75%; }
+.msg.sent { align-self:flex-end; }
+.msg.recv { align-self:flex-start; }
+.msg-bubble {
+  padding:10px 14px; border-radius:18px; font-size:14px; line-height:1.5;
+}
+.msg.sent .msg-bubble {
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color:#000; border-bottom-right-radius:4px;
+}
+.msg.recv .msg-bubble {
+  background:var(--surface2); color:var(--text); border-bottom-left-radius:4px;
+  border:1px solid var(--border);
+}
+.msg-time { font-size:10px; color:var(--text3); margin-top:4px; text-align:right; }
+.msg.recv .msg-time { text-align:left; }
+.chat-input-bar {
+  padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:10px; align-items:center; flex-shrink:0;
+}
+.chat-input {
+  flex:1; background:var(--surface); border:1px solid var(--border); border-radius:24px;
+  padding:11px 18px; color:var(--text); font-size:14px; outline:none;
+  font-family:'DM Sans',sans-serif;
+}
+.chat-input::placeholder { color:var(--text3); }
+.chat-send {
+  width:44px; height:44px; background:var(--gold); border:none; border-radius:50%;
+  color:#000; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:all 0.2s;
+}
+.chat-send:hover { background:var(--gold-light); transform:scale(1.05); }
+.chat-list { flex:1; overflow-y:auto; }
+.chat-item {
+  display:flex; align-items:center; gap:12px; padding:14px 20px;
+  cursor:pointer; transition:background 0.15s; border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.chat-item:hover { background:var(--surface); }
+.chat-item-avatar { width:48px; height:48px; border-radius:50%; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.chat-item-info { flex:1; }
+.chat-item-name { font-size:14px; font-weight:600; margin-bottom:3px; }
+.chat-item-msg { font-size:12px; color:var(--text3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+.chat-item-time { font-size:11px; color:var(--text3); }
+
+/* ─── JACKPOT SCREEN ─── */
+#screen-jackpot { background:radial-gradient(ellipse at center top, #1A0808 0%, var(--bg) 50%); }
+.jp-hero {
+  text-align:center; padding:32px 20px 20px; position:relative;
+}
+.jp-trophy { font-size:72px; animation:float 3s ease-in-out infinite; display:block; }
+.jp-title { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:700; color:var(--gold); margin:12px 0 4px; }
+.jp-sub { font-size:13px; color:var(--text2); }
+.jp-countdown {
+  display:flex; gap:12px; justify-content:center; margin:20px 0;
+}
+.jp-count-item { text-align:center; }
+.jp-count-num {
+  width:64px; height:64px; background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; display:flex; align-items:center; justify-content:center;
+  font-size:28px; font-weight:700; color:var(--gold); font-variant-numeric:tabular-nums;
+}
+.jp-count-label { font-size:10px; color:var(--text3); margin-top:5px; text-transform:uppercase; letter-spacing:1px; }
+.jp-sep { color:var(--gold); font-size:28px; align-self:flex-start; margin-top:18px; opacity:0.5; }
+
+.jp-tickets {
+  margin:0 16px; padding:20px; background:var(--surface); border:1px solid var(--border);
+  border-radius:20px;
+}
+.jp-tickets-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.jp-tickets-title { font-size:16px; font-weight:600; }
+.jp-ticket-count {
+  padding:6px 16px; background:rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.3);
+  border-radius:20px; font-size:14px; font-weight:700; color:var(--gold);
+}
+.jp-ad-btn {
+  width:100%; padding:14px; border:none; border-radius:14px;
+  background:linear-gradient(135deg, var(--red) 0%, var(--red-light) 100%);
+  color:#fff; font-size:14px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:all 0.2s;
+}
+.jp-ad-btn:hover { transform:translateY(-2px); box-shadow:var(--shadow-red); }
+.jp-ad-info { font-size:12px; color:var(--text3); text-align:center; margin-top:8px; }
+.jp-participate {
+  margin:12px 16px 0; padding:14px; border:none; border-radius:14px; width:calc(100% - 32px);
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color:#000; font-size:15px; font-weight:700; cursor:pointer;
+  transition:all 0.2s;
+}
+.jp-participate:hover { transform:translateY(-2px); box-shadow:var(--shadow-gold); }
+.jp-prev-winners {
+  margin:16px 16px 0; padding:18px; background:var(--surface); border:1px solid var(--border); border-radius:20px;
+}
+.jp-winner-item { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.jp-winner-item:last-child { border:none; }
+.jp-winner-rank { font-size:20px; width:32px; }
+.jp-winner-info { flex:1; }
+.jp-winner-name { font-size:13px; font-weight:600; }
+.jp-winner-did { font-size:11px; color:var(--text3); }
+.jp-winner-prize { font-size:14px; font-weight:700; color:var(--gold); }
+
+/* ─── PROFILE SCREEN ─── */
+.profile-hero {
+  padding:24px 20px; text-align:center;
+  background:linear-gradient(to bottom, var(--surface), transparent);
+  margin-bottom:8px;
+}
+.profile-avatar {
+  width:80px; height:80px; border-radius:50%; background:var(--surface2);
+  display:flex; align-items:center; justify-content:center; font-size:36px;
+  margin:0 auto 12px; border:3px solid var(--gold);
+}
+.profile-name { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:700; color:var(--gold); }
+.profile-did { font-size:11px; color:var(--text3); margin-top:4px; letter-spacing:0.5px; }
+.profile-role-btns { display:flex; gap:8px; justify-content:center; margin-top:14px; }
+.role-btn {
+  padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer;
+  border:1px solid var(--border); background:var(--surface); color:var(--text2);
+  transition:all 0.2s;
+}
+.role-btn.active { background:var(--gold); color:#000; border-color:var(--gold); }
+.profile-stats {
+  display:flex; gap:1px; margin:0 16px; background:var(--border); border-radius:16px; overflow:hidden;
+}
+.stat-item { flex:1; background:var(--surface); padding:14px 8px; text-align:center; }
+.stat-num { font-size:20px; font-weight:700; color:var(--gold); }
+.stat-label { font-size:10px; color:var(--text3); margin-top:2px; text-transform:uppercase; letter-spacing:0.8px; }
+.profile-menu { margin:16px; display:flex; flex-direction:column; gap:2px; }
+.profile-menu-item {
+  display:flex; align-items:center; gap:14px; padding:16px; background:var(--surface);
+  border-radius:12px; cursor:pointer; transition:all 0.2s;
+}
+.profile-menu-item:hover { background:var(--surface2); }
+.menu-icon { font-size:20px; width:36px; height:36px; background:var(--surface2); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.menu-label { flex:1; font-size:14px; font-weight:500; }
+.menu-arrow { color:var(--text3); font-size:16px; }
+.menu-badge { background:var(--red); color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; }
+
+/* ─── ORDER TRACK ─── */
+.order-track { margin:12px 16px; padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:20px; }
+.track-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.track-id { font-size:13px; font-weight:600; color:var(--gold); }
+.track-status { font-size:11px; color:var(--text3); }
+.track-steps { display:flex; flex-direction:column; gap:0; }
+.track-step { display:flex; gap:14px; position:relative; }
+.track-step:not(:last-child) .step-line {
+  position:absolute; left:14px; top:30px; width:2px; height:calc(100% - 10px);
+  background:var(--border);
+}
+.track-step.done .step-line { background:var(--gold); }
+.step-dot {
+  width:28px; height:28px; border-radius:50%; border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;
+  background:var(--surface2); z-index:1; margin-top:2px;
+}
+.track-step.done .step-dot { background:var(--gold); border-color:var(--gold); color:#000; }
+.track-step.active .step-dot { border-color:var(--gold); background:rgba(212,175,55,0.15); animation:stepPulse 1.5s infinite; }
+@keyframes stepPulse { 0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,0.4)} 50%{box-shadow:0 0 0 8px rgba(212,175,55,0)} }
+.step-info { padding:4px 0 20px; }
+.step-title { font-size:13px; font-weight:600; margin-bottom:2px; }
+.step-desc { font-size:11px; color:var(--text3); }
+
+/* ─── CART SCREEN ─── */
+#screen-cart .cart-item {
+  display:flex; gap:12px; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.05);
+  align-items:center;
+}
+.cart-item-img { width:56px; height:56px; border-radius:12px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
+.cart-item-info { flex:1; }
+.cart-item-name { font-size:14px; font-weight:600; margin-bottom:4px; }
+.cart-item-price { font-size:13px; color:var(--gold); font-weight:600; }
+.cart-qty { display:flex; align-items:center; gap:10px; }
+.qty-btn { width:28px; height:28px; border:1px solid var(--border); background:var(--surface2); border-radius:8px; color:var(--text); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.qty-num { font-size:14px; font-weight:600; min-width:20px; text-align:center; }
+.cart-summary { margin:16px; padding:18px; background:var(--surface); border:1px solid var(--border); border-radius:18px; }
+.summary-row { display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px; color:var(--text2); }
+.summary-row.total { color:var(--text); font-weight:700; font-size:16px; border-top:1px solid var(--border); padding-top:10px; margin-top:4px; }
+.summary-row.total .price { color:var(--gold); }
+.checkout-btn {
+  margin:0 16px 16px; width:calc(100% - 32px); padding:16px; border:none; border-radius:16px;
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color:#000; font-size:16px; font-weight:700; cursor:pointer; transition:all 0.2s;
+}
+.checkout-btn:hover { transform:translateY(-2px); box-shadow:var(--shadow-gold); }
+
+/* ─── TOAST ─── */
+.toast {
+  position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-80px);
+  background:var(--surface2); border:1px solid var(--border); border-radius:12px;
+  padding:12px 20px; font-size:13px; font-weight:500; z-index:9999;
+  transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  white-space:nowrap; box-shadow:var(--shadow-gold);
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+.toast.success { border-color:rgba(46,204,113,0.4); color:#2ECC71; }
+.toast.error { border-color:rgba(192,57,43,0.4); color:var(--red-light); }
+.toast.info { border-color:var(--border); color:var(--gold); }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:500;
+  display:none; align-items:flex-end; justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open { display:flex; }
+.modal-sheet {
+  width:100%; max-width:430px; background:var(--bg2); border-radius:24px 24px 0 0;
+  border-top:1px solid var(--border); padding:24px 20px 32px;
+  animation:sheetUp 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  max-height:90dvh; overflow-y:auto;
+}
+@keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.modal-handle { width:40px; height:4px; background:var(--surface2); border-radius:2px; margin:0 auto 20px; }
+.modal-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:700; color:var(--gold); margin-bottom:16px; }
+
+/* ─── PAYMENT MODAL ─── */
+.coin-selector { display:flex; gap:8px; margin-bottom:20px; }
+.coin-btn {
+  flex:1; padding:12px; border:1px solid var(--border); border-radius:12px;
+  background:var(--surface); color:var(--text2); font-size:13px; font-weight:600;
+  cursor:pointer; transition:all 0.2s; text-align:center;
+}
+.coin-btn.active { border-color:var(--gold); background:rgba(212,175,55,0.1); color:var(--gold); }
+.amount-display {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:16px; margin-bottom:20px; text-align:center;
+}
+.amount-crypto { font-size:28px; font-weight:700; color:var(--gold); }
+.amount-fiat { font-size:13px; color:var(--text3); margin-top:4px; }
+.pay-btn {
+  width:100%; padding:16px; border:none; border-radius:14px;
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color:#000; font-size:15px; font-weight:700; cursor:pointer; transition:all 0.2s;
+}
+.pay-btn:hover { transform:translateY(-2px); box-shadow:var(--shadow-gold); }
+
+/* ─── EMA CHAT MODAL ─── */
+.ema-modal { max-height:85dvh; }
+.ema-header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+.ema-avatar { width:44px; height:44px; background:linear-gradient(135deg, var(--gold-dark), var(--gold)); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; }
+.ema-info h3 { font-size:16px; font-weight:600; color:var(--gold); }
+.ema-info p { font-size:11px; color:var(--text3); }
+.ema-msgs { height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+.ema-msgs::-webkit-scrollbar { width:2px; }
+.ema-msg { max-width:85%; }
+.ema-msg.user { align-self:flex-end; }
+.ema-msg.ai { align-self:flex-start; }
+.ema-bubble { padding:10px 14px; border-radius:16px; font-size:13px; line-height:1.5; }
+.ema-msg.user .ema-bubble { background:var(--gold); color:#000; border-bottom-right-radius:4px; }
+.ema-msg.ai .ema-bubble { background:var(--surface2); color:var(--text); border-bottom-left-radius:4px; border:1px solid var(--border); }
+.ema-quick { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.ema-quick-btn { padding:6px 12px; background:var(--surface); border:1px solid var(--border); border-radius:20px; font-size:11px; color:var(--text2); cursor:pointer; transition:all 0.15s; }
+.ema-quick-btn:hover { border-color:var(--gold); color:var(--gold); }
+.ema-input-row { display:flex; gap:8px; }
+.ema-input { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:22px; padding:11px 16px; color:var(--text); font-size:13px; outline:none; }
+.ema-send { width:40px; height:40px; background:var(--gold); border:none; border-radius:50%; color:#000; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* ─── PRODUCT DETAIL MODAL ─── */
+.prod-detail-img { font-size:80px; text-align:center; padding:24px; background:var(--surface); border-radius:16px; margin-bottom:16px; }
+.prod-detail-name { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; margin-bottom:6px; }
+.prod-detail-desc { font-size:13px; color:var(--text2); line-height:1.6; margin-bottom:16px; }
+.prod-detail-prices { display:flex; justify-content:space-between; align-items:center; padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:20px; }
+.price-crypto { font-size:20px; font-weight:700; color:var(--gold); }
+.price-fiat { font-size:13px; color:var(--text3); }
+
+/* ─── STORE / SELLER SCREEN ─── */
+.store-header {
+  padding:24px 20px 16px; background:linear-gradient(135deg, var(--surface), var(--bg2));
+  border-bottom:1px solid var(--border); text-align:center;
+}
+.store-icon { font-size:52px; margin-bottom:10px; }
+.store-name { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:var(--gold); }
+.store-meta { font-size:12px; color:var(--text3); margin-top:4px; }
+.store-stats { display:flex; gap:1px; background:var(--border); margin-top:14px; border-radius:12px; overflow:hidden; }
+.store-stat { flex:1; background:var(--surface); padding:10px; text-align:center; }
+.store-stat-num { font-size:16px; font-weight:700; color:var(--gold); }
+.store-stat-label { font-size:10px; color:var(--text3); }
+
+/* ─── DELIVERY SCREEN ─── */
+.delivery-map {
+  margin:12px 16px; height:180px; background:linear-gradient(135deg, #0D1520 0%, #0A1018 100%);
+  border-radius:18px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden;
+}
+.map-placeholder { text-align:center; color:var(--text3); font-size:13px; }
+.map-placeholder span { font-size:36px; display:block; margin-bottom:6px; }
+.delivery-dot {
+  position:absolute; width:12px; height:12px; background:var(--gold); border-radius:50%;
+  border:2px solid #fff; animation:moveDot 4s linear infinite;
+  box-shadow:0 0 12px var(--gold);
+}
+@keyframes moveDot {
+  0%{left:20%;top:60%} 25%{left:40%;top:30%} 50%{left:70%;top:50%} 75%{left:50%;top:70%} 100%{left:20%;top:60%}
+}
+
+/* ─── SEARCH BAR ─── */
+.search-bar {
+  margin:8px 16px 4px; display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:11px 16px;
+}
+.search-icon { color:var(--text3); font-size:16px; }
+.search-input { flex:1; background:none; border:none; outline:none; color:var(--text); font-size:14px; font-family:'DM Sans',sans-serif; }
+.search-input::placeholder { color:var(--text3); }
+
+/* ─── LOADING STATE ─── */
+.loading-spinner {
+  width:32px; height:32px; border:3px solid var(--surface2); border-top-color:var(--gold);
+  border-radius:50%; animation:spin 0.7s linear infinite; margin:20px auto;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ─── SELLER DASHBOARD ─── */
+.dashboard-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:4px 16px 8px; }
+.dash-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; }
+.dash-card-icon { font-size:24px; margin-bottom:8px; }
+.dash-card-num { font-size:22px; font-weight:700; color:var(--gold); }
+.dash-card-label { font-size:11px; color:var(--text3); margin-top:2px; }
+
+/* ─── COIN CODE BADGE ─── */
+.coin-badge {
+  display:inline-flex; align-items:center; gap:4px; padding:3px 8px;
+  background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25);
+  border-radius:20px; font-size:11px; color:var(--gold); font-weight:600;
+}
+
+/* ─── ANIMATIONS ─── */
+.shimmer {
+  background:linear-gradient(90deg, var(--surface) 0%, var(--surface2) 50%, var(--surface) 100%);
+  background-size:200% 100%; animation:shimmer 1.5s infinite;
+}
+@keyframes shimmer { to{background-position:-200% 0} }
+
+/* UTILS */
+.flex { display:flex; }
+.flex-center { display:flex; align-items:center; justify-content:center; }
+.gap-8 { gap:8px; }
+.mt-8 { margin-top:8px; }
+.pb-8 { padding-bottom:8px; }
+.text-gold { color:var(--gold); }
+.text-sm { font-size:12px; }
+.text-xs { font-size:11px; color:var(--text3); }
+.fw-600 { font-weight:600; }
+.w-full { width:100%; }
+.hidden { display:none !important; }
+.divider { height:1px; background:var(--border); margin:8px 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ SCREENS ═══════════════════ -->
+
+<!-- SPLASH -->
+<div id="screen-splash" class="screen active">
+  <div class="splash-logo">
+    <div class="splash-crown">👑</div>
+    <div class="splash-title">PALACE</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold-dark);letter-spacing:6px;margin-top:-14px">MARKET</div>
+    <div class="splash-sub">Premium · Marketplace · Web3</div>
+    <div class="splash-loader"><div class="splash-loader-bar"></div></div>
+  </div>
+</div>
+
+<!-- AUTH -->
+<div id="screen-auth" class="screen">
+  <div class="auth-card">
+    <div class="auth-icon">🔐</div>
+    <div class="auth-title">Bienvenue</div>
+    <div class="auth-desc">
+      Connectez-vous avec votre identité Delta pour accéder à Palace Market.<br>
+      <span style="color:var(--gold);font-weight:600">Aucun mot de passe requis.</span>
+    </div>
+    <button class="btn-delta" onclick="authWithDelta()">
+      👑 &nbsp;Se connecter avec Delta
+    </button>
+    <div style="margin-top:16px;font-size:11px;color:var(--text3)">
+      Sécurisé par la blockchain · Identité décentralisée
+    </div>
+  </div>
+</div>
+
+<!-- ROLE SELECT -->
+<div id="screen-role" class="screen">
+  <div class="role-header">
+    <h2>Choisir votre rôle</h2>
+    <p>Vous pourrez changer à tout moment depuis votre profil</p>
+  </div>
+  <div class="role-cards">
+    <div class="role-card" onclick="selectRole('buyer')">
+      <div class="role-icon">🛒</div>
+      <div class="role-info">
+        <h3>Acheteur</h3>
+        <p>Parcourez, commandez et faites livrer produits & nourriture</p>
+      </div>
+      <div class="role-arrow">›</div>
+    </div>
+    <div class="role-card" onclick="selectRole('seller')">
+      <div class="role-icon">🏪</div>
+      <div class="role-info">
+        <h3>Vendeur</h3>
+        <p>Ouvrez votre boutique et gérez vos commandes</p>
+      </div>
+      <div class="role-arrow">›</div>
+    </div>
+    <div class="role-card" onclick="selectRole('delivery')">
+      <div class="role-icon">🛵</div>
+      <div class="role-info">
+        <h3>Livreur</h3>
+        <p>Acceptez des livraisons et gagnez des revenus</p>
+      </div>
+      <div class="role-arrow">›</div>
+    </div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="screen-home" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">👑 Palace</div>
+    <button class="topbar-icon-btn" onclick="showScreen('screen-search')">🔍</button>
+    <button class="topbar-icon-btn" onclick="showScreen('screen-cart')">
+      🛒 <span class="badge" id="cart-badge">3</span>
+    </button>
+    <button class="topbar-icon-btn" onclick="showScreen('screen-notifs')">🔔<span class="badge">2</span></button>
+  </div>
+  <div class="scroll-area">
+    <!-- Hero Balance -->
+    <div class="home-hero">
+      <div class="home-greeting">Bonjour 👋</div>
+      <div class="home-name" id="user-display-name">Chargement...</div>
+      <div class="home-balance-label">Solde Estimé</div>
+      <div class="home-balance">245.80 <span>USDT</span></div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <span class="coin-badge">DTC</span>
+        <span class="coin-badge">USDT</span>
+        <span class="coin-badge">ICP</span>
+      </div>
+    </div>
+
+    <!-- Jackpot Banner -->
+    <div class="jackpot-banner" onclick="switchTab('jackpot')">
+      <div class="jackpot-inner">
+        <div class="jackpot-icon">🎰</div>
+        <div class="jackpot-info">
+          <div class="jackpot-label">⚡ Dimanche 20h GMT</div>
+          <div class="jackpot-title">Palace Jackpot</div>
+          <div class="jackpot-sub">Grand tirage hebdomadaire · 3 🎟 disponibles</div>
+        </div>
+        <div class="jackpot-timer">
+          <div class="jackpot-time" id="home-countdown">04j 12h</div>
+          <div class="jackpot-tickets">🎟 3 tickets</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Track -->
+    <div class="section-title">📦 COMMANDE EN COURS</div>
+    <div class="order-track">
+      <div class="track-header">
+        <div class="track-id">#PM-2024-8834</div>
+        <div class="track-status">En livraison</div>
+      </div>
+      <div class="track-steps">
+        <div class="track-step done"><div class="step-line"></div><div class="step-dot">✓</div><div class="step-info"><div class="step-title">Commande validée</div><div class="step-desc">Paiement USDT reçu · 14h32</div></div></div>
+        <div class="track-step done"><div class="step-line"></div><div class="step-dot">✓</div><div class="step-info"><div class="step-title">Préparation</div><div class="step-desc">Votre commande est prête · 15h05</div></div></div>
+        <div class="track-step active"><div class="step-line"></div><div class="step-dot">🛵</div><div class="step-info"><div class="step-title">En route</div><div class="step-desc">Moussa • À 1.2 km de chez vous</div></div></div>
+        <div class="track-step"><div class="step-dot">📍</div><div class="step-info"><div class="step-title">Livraison</div><div class="step-desc">Code de confirmation requis</div></div></div>
+      </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="section-title">🗂 CATÉGORIES</div>
+    <div class="cats-scroll" id="home-cats">
+      <div class="cat-chip active" onclick="filterCat(this,'all')"><div class="cat-chip-icon">⭐</div><div class="cat-chip-label">Tout</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'food')"><div class="cat-chip-icon">🍽</div><div class="cat-chip-label">Food</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'fashion')"><div class="cat-chip-icon">👗</div><div class="cat-chip-label">Mode</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'tech')"><div class="cat-chip-icon">📱</div><div class="cat-chip-label">Tech</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'beauty')"><div class="cat-chip-icon">💄</div><div class="cat-chip-label">Beauté</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'home')"><div class="cat-chip-icon">🏠</div><div class="cat-chip-label">Maison</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'sports')"><div class="cat-chip-icon">⚽</div><div class="cat-chip-label">Sport</div></div>
+    </div>
+
+    <!-- Restaurants -->
+    <div class="section-title">🍽 PALACE FOOD</div>
+    <div class="rest-scroll">
+      <div class="rest-card" onclick="openRestaurant('Le Sénégalais')">
+        <div class="rest-img">🍲</div>
+        <div class="rest-body">
+          <div class="rest-name">Le Sénégalais</div>
+          <div class="rest-meta"><span class="rest-rating">★ 4.8</span> · 20 min</div>
+          <div style="margin-top:6px"><span class="rest-badge">Populaire</span></div>
+        </div>
+      </div>
+      <div class="rest-card" onclick="openRestaurant('Makoya Grill')">
+        <div class="rest-img">🥩</div>
+        <div class="rest-body">
+          <div class="rest-name">Makoya Grill</div>
+          <div class="rest-meta"><span class="rest-rating">★ 4.6</span> · 35 min</div>
+          <div style="margin-top:6px"><span class="rest-badge">Nouveau</span></div>
+        </div>
+      </div>
+      <div class="rest-card" onclick="openRestaurant('Chez Mama')">
+        <div class="rest-img">🫕</div>
+        <div class="rest-body">
+          <div class="rest-name">Chez Mama</div>
+          <div class="rest-meta"><span class="rest-rating">★ 4.9</span> · 25 min</div>
+          <div style="margin-top:6px"><span class="rest-badge">Top Rated</span></div>
+        </div>
+      </div>
+      <div class="rest-card" onclick="openRestaurant('Taco Royale')">
+        <div class="rest-img">🌮</div>
+        <div class="rest-body">
+          <div class="rest-name">Taco Royale</div>
+          <div class="rest-meta"><span class="rest-rating">★ 4.5</span> · 15 min</div>
+          <div style="margin-top:6px"><span class="rest-badge">Rapide</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products -->
+    <div class="section-title">🛍 PRODUITS RECOMMANDÉS</div>
+    <div class="prod-grid" id="prod-grid">
+      <!-- filled by JS -->
+    </div>
+
+    <div style="height:16px"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('home')"><div class="nav-icon">🏠</div><div class="nav-label">Accueil</div></div>
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item" onclick="switchTab('chat')"><div class="nav-icon">💬</div><div class="nav-label">Messages</div></div>
+    <div class="nav-item" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div id="screen-search" class="screen">
+  <div class="topbar" style="background:var(--bg2);padding-bottom:14px">
+    <button class="topbar-icon-btn" onclick="switchTab('home')">‹</button>
+    <div style="flex:1;font-size:16px;font-weight:600">Explorer</div>
+  </div>
+  <div class="search-bar" style="margin-top:0">
+    <div class="search-icon">🔍</div>
+    <input class="search-input" placeholder="Chercher produits, restaurants, vendeurs..." oninput="handleSearch(this.value)"/>
+  </div>
+  <div class="scroll-area" style="padding:8px 0">
+    <div class="section-title">🔥 TENDANCES</div>
+    <div class="prod-grid" id="search-grid"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('home')"><div class="nav-icon">🏠</div><div class="nav-label">Accueil</div></div>
+    <div class="nav-item active" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item" onclick="switchTab('chat')"><div class="nav-icon">💬</div><div class="nav-label">Messages</div></div>
+    <div class="nav-item" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- ORDERS -->
+<div id="screen-orders" class="screen">
+  <div class="topbar" style="background:var(--bg2);padding-bottom:14px">
+    <div class="topbar-logo" style="font-size:18px">📦 Commandes</div>
+  </div>
+  <div class="scroll-area">
+    <div id="orders-list"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('home')"><div class="nav-icon">🏠</div><div class="nav-label">Accueil</div></div>
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item active" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item" onclick="switchTab('chat')"><div class="nav-icon">💬</div><div class="nav-label">Messages</div></div>
+    <div class="nav-item" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- CHAT LIST -->
+<div id="screen-chat" class="screen">
+  <div class="topbar" style="background:var(--bg2);padding-bottom:14px">
+    <div class="topbar-logo" style="font-size:18px">💬 Messages</div>
+    <button class="topbar-icon-btn" onclick="openEma()">🤖</button>
+  </div>
+  <div class="chat-list scroll-area" id="chat-list">
+    <!-- filled by JS -->
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('home')"><div class="nav-icon">🏠</div><div class="nav-label">Accueil</div></div>
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item active" onclick="switchTab('chat')"><div class="nav-icon">💬</div><div class="nav-label">Messages</div></div>
+    <div class="nav-item" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- CHAT CONV -->
+<div id="screen-chat-conv" class="screen">
+  <div class="chat-header">
+    <div class="chat-back" onclick="switchTab('chat')">‹</div>
+    <div class="chat-avatar" id="conv-avatar">👤</div>
+    <div class="chat-contact">
+      <h3 id="conv-name">Contact</h3>
+      <p><span class="chat-online"></span><span id="conv-status">En ligne</span></p>
+    </div>
+    <button class="topbar-icon-btn" style="margin-left:auto" onclick="showToast('Appel en cours...','info')">📞</button>
+  </div>
+  <div class="chat-msgs scroll-area" id="chat-messages"></div>
+  <div class="chat-input-bar">
+    <input class="chat-input" id="chat-input-field" placeholder="Votre message..." onkeypress="if(event.key==='Enter')sendChatMsg()"/>
+    <button class="chat-send" onclick="sendChatMsg()">➤</button>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div id="screen-profile" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <div class="topbar-logo" style="font-size:18px">👤 Profil</div>
+    <button class="topbar-icon-btn" onclick="showToast('Paramètres','info')">⚙️</button>
+  </div>
+  <div class="scroll-area">
+    <div class="profile-hero">
+      <div class="profile-avatar" id="profile-avatar">👤</div>
+      <div class="profile-name" id="profile-name">Chargement...</div>
+      <div class="profile-did" id="profile-did">did:delta:...</div>
+      <div class="profile-role-btns">
+        <button class="role-btn active" onclick="switchRole(this,'buyer')">🛒 Acheteur</button>
+        <button class="role-btn" onclick="switchRole(this,'seller')">🏪 Vendeur</button>
+        <button class="role-btn" onclick="switchRole(this,'delivery')">🛵 Livreur</button>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="stat-item"><div class="stat-num">24</div><div class="stat-label">Commandes</div></div>
+      <div class="stat-item"><div class="stat-num">12</div><div class="stat-label">Tickets 🎟</div></div>
+      <div class="stat-item"><div class="stat-num">4.9</div><div class="stat-label">Note ★</div></div>
+    </div>
+    <div class="profile-menu">
+      <div class="profile-menu-item" onclick="showToast('Portefeuille Delta','info')">
+        <div class="menu-icon">💰</div><div class="menu-label">Portefeuille Delta</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="switchTab('jackpot')">
+        <div class="menu-icon">🎰</div><div class="menu-label">Jackpot Palace</div><span class="menu-badge">3 🎟</span><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="showSellerDashboard()">
+        <div class="menu-icon">📊</div><div class="menu-label">Tableau de bord vendeur</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="showToast('Historique transactions','info')">
+        <div class="menu-icon">📋</div><div class="menu-label">Historique transactions</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="showToast('Adresses sauvegardées','info')">
+        <div class="menu-icon">📍</div><div class="menu-label">Mes adresses</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="openEma()">
+        <div class="menu-icon">🤖</div><div class="menu-label">Ema – Assistante IA</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="changeLanguage()">
+        <div class="menu-icon">🌍</div><div class="menu-label">Langue</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="logout()" style="border-top:1px solid var(--border);margin-top:8px">
+        <div class="menu-icon">🚪</div><div class="menu-label" style="color:var(--red-light)">Déconnexion</div><div class="menu-arrow">›</div>
+      </div>
+    </div>
+    <div style="height:16px"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('home')"><div class="nav-icon">🏠</div><div class="nav-label">Accueil</div></div>
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item" onclick="switchTab('chat')"><div class="nav-icon">💬</div><div class="nav-label">Messages</div></div>
+    <div class="nav-item active" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- JACKPOT -->
+<div id="screen-jackpot" class="screen">
+  <div class="topbar" style="background:transparent">
+    <button class="topbar-icon-btn" onclick="switchTab('home')">‹</button>
+    <div style="flex:1;text-align:center;font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--gold)">Palace Jackpot</div>
+    <div style="width:40px"></div>
+  </div>
+  <div class="scroll-area">
+    <div class="jp-hero">
+      <span class="jp-trophy">🏆</span>
+      <div class="jp-title">Jackpot du Dimanche</div>
+      <div class="jp-sub">Chaque dimanche à 20h00 GMT · Paiement en DTC</div>
+      <div style="font-size:28px;font-weight:700;color:var(--red-light);margin:10px 0;font-family:'Cormorant Garamond',serif">
+        Prize Pool: 500 USDT
+      </div>
+      <div class="jp-countdown">
+        <div class="jp-count-item"><div class="jp-count-num" id="jp-days">04</div><div class="jp-count-label">Jours</div></div>
+        <div class="jp-sep">:</div>
+        <div class="jp-count-item"><div class="jp-count-num" id="jp-hours">12</div><div class="jp-count-label">Heures</div></div>
+        <div class="jp-sep">:</div>
+        <div class="jp-count-item"><div class="jp-count-num" id="jp-mins">45</div><div class="jp-count-label">Min</div></div>
+        <div class="jp-sep">:</div>
+        <div class="jp-count-item"><div class="jp-count-num" id="jp-secs">30</div><div class="jp-count-label">Sec</div></div>
+      </div>
+    </div>
+
+    <div class="jp-tickets">
+      <div class="jp-tickets-header">
+        <div class="jp-tickets-title">🎟 Mes Tickets</div>
+        <div class="jp-ticket-count" id="ticket-count">3 tickets</div>
+      </div>
+      <button class="jp-ad-btn" onclick="watchAd()">
+        📺 &nbsp;Voir une pub → +1 Ticket + 0.01 USDT en DTC
+      </button>
+      <div class="jp-ad-info">Regardez des publicités pour gagner des tickets et du DTC · Sans limite quotidienne</div>
+    </div>
+
+    <button class="jp-participate" onclick="participateJackpot()">
+      🎰 &nbsp;Participer au tirage avec mes tickets
+    </button>
+
+    <div class="jp-prev-winners" style="margin-top:16px">
+      <div class="section-title" style="padding:0 0 12px">🏅 DERNIERS GAGNANTS</div>
+      <div class="jp-winner-item"><div class="jp-winner-rank">🥇</div><div class="jp-winner-info"><div class="jp-winner-name">Kofi A.</div><div class="jp-winner-did">did:delta:kofi***</div></div><div class="jp-winner-prize">250 USDT</div></div>
+      <div class="jp-winner-item"><div class="jp-winner-rank">🥈</div><div class="jp-winner-info"><div class="jp-winner-name">Amara D.</div><div class="jp-winner-did">did:delta:ama***</div></div><div class="jp-winner-prize">150 USDT</div></div>
+      <div class="jp-winner-item"><div class="jp-winner-rank">🥉</div><div class="jp-winner-info"><div class="jp-winner-name">Seun B.</div><div class="jp-winner-did">did:delta:seu***</div></div><div class="jp-winner-prize">100 USDT</div></div>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('home')"><div class="nav-icon">🏠</div><div class="nav-label">Accueil</div></div>
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item" onclick="switchTab('chat')"><div class="nav-icon">💬</div><div class="nav-label">Messages</div></div>
+    <div class="nav-item" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- CART -->
+<div id="screen-cart" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <button class="topbar-icon-btn" onclick="switchTab('home')">‹</button>
+    <div style="flex:1;font-size:16px;font-weight:600">🛒 Mon Panier</div>
+    <button class="topbar-icon-btn" onclick="clearCart()" style="color:var(--red-light)">🗑</button>
+  </div>
+  <div class="scroll-area" id="cart-items">
+    <!-- filled by JS -->
+  </div>
+  <div class="cart-summary">
+    <div class="summary-row"><span>Sous-total</span><span id="subtotal">0 DTC</span></div>
+    <div class="summary-row"><span>Livraison</span><span style="color:var(--gold)">0.5 DTC</span></div>
+    <div class="summary-row total"><span>Total</span><span class="price" id="total-price">0 DTC</span></div>
+  </div>
+  <button class="checkout-btn" onclick="openPayment()">💳 &nbsp;Payer avec Delta Wallet</button>
+</div>
+
+<!-- SELLER DASHBOARD -->
+<div id="screen-seller" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <button class="topbar-icon-btn" onclick="switchTab('profile')">‹</button>
+    <div style="flex:1;font-size:16px;font-weight:600">📊 Ma Boutique</div>
+    <button class="topbar-icon-btn" onclick="showToast('Ajouter un produit','info')">➕</button>
+  </div>
+  <div class="scroll-area">
+    <div class="store-header">
+      <div class="store-icon">🏪</div>
+      <div class="store-name" id="store-name">Ma Boutique Palace</div>
+      <div class="store-meta">Vendeur vérifié · Ouvert depuis 30 jours</div>
+      <div class="store-stats">
+        <div class="store-stat"><div class="store-stat-num">124</div><div class="store-stat-label">Ventes</div></div>
+        <div class="store-stat"><div class="store-stat-num">58</div><div class="store-stat-label">Produits</div></div>
+        <div class="store-stat"><div class="store-stat-num">4.8★</div><div class="store-stat-label">Note</div></div>
+      </div>
+    </div>
+    <div class="section-title">📈 REVENUS</div>
+    <div class="dashboard-cards">
+      <div class="dash-card"><div class="dash-card-icon">💰</div><div class="dash-card-num">128.5</div><div class="dash-card-label">USDT ce mois</div></div>
+      <div class="dash-card"><div class="dash-card-icon">📦</div><div class="dash-card-num">8</div><div class="dash-card-label">Commandes actives</div></div>
+      <div class="dash-card"><div class="dash-card-icon">⭐</div><div class="dash-card-num">96%</div><div class="dash-card-label">Satisfaction client</div></div>
+      <div class="dash-card"><div class="dash-card-icon">🚀</div><div class="dash-card-num">+24%</div><div class="dash-card-label">vs mois dernier</div></div>
+    </div>
+    <div class="section-title">📋 COMMANDES RÉCENTES</div>
+    <div id="seller-orders"></div>
+    <div style="height:16px"></div>
+  </div>
+</div>
+
+<!-- NOTIFS -->
+<div id="screen-notifs" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <button class="topbar-icon-btn" onclick="switchTab('home')">‹</button>
+    <div style="flex:1;font-size:16px;font-weight:600">🔔 Notifications</div>
+  </div>
+  <div class="scroll-area" id="notifs-list"></div>
+</div>
+
+<!-- ═══════════════════ EMA FAB ═══════════════════ -->
+<button class="ema-fab hidden" id="ema-fab" onclick="openEma()">🤖</button>
+
+<!-- ═══════════════════ TOAST ═══════════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════ MODALS ═══════════════════ -->
+
+<!-- Payment Modal -->
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💳 Paiement Delta</div>
+    <div class="coin-selector">
+      <button class="coin-btn active" onclick="selectCoin(this,'USDT')">💵 USDT</button>
+      <button class="coin-btn" onclick="selectCoin(this,'DTC')">🪙 DTC</button>
+      <button class="coin-btn" onclick="selectCoin(this,'ICP')">⚡ ICP</button>
+    </div>
+    <div class="amount-display">
+      <div class="amount-crypto" id="pay-amount">12.5 USDT</div>
+      <div class="amount-fiat" id="pay-fiat">≈ 8,125 FCFA</div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px;padding:10px;background:var(--surface);border-radius:10px;border:1px solid var(--border)">
+      🔒 Paiement sécurisé via escrow · Le vendeur reçoit après confirmation de livraison
+    </div>
+    <button class="pay-btn" onclick="executePayment()">✅ &nbsp;Confirmer le paiement</button>
+    <button onclick="closeModal('modal-payment')" style="width:100%;margin-top:10px;padding:12px;border:none;background:none;color:var(--text3);font-size:14px;cursor:pointer">Annuler</button>
+  </div>
+</div>
+
+<!-- Product Detail Modal -->
+<div class="modal-overlay" id="modal-product">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="prod-detail-img" id="modal-prod-img">📱</div>
+    <div class="prod-detail-name" id="modal-prod-name">Produit</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <span style="color:var(--gold)">★★★★★</span>
+      <span style="font-size:12px;color:var(--text3)">4.8 (124 avis)</span>
+    </div>
+    <div class="prod-detail-desc" id="modal-prod-desc">Description du produit</div>
+    <div class="prod-detail-prices">
+      <div><div class="price-crypto" id="modal-prod-price">2.5 DTC</div><div class="price-fiat" id="modal-prod-fcfa">≈ 1,625 FCFA</div></div>
+      <div style="text-align:right"><div style="font-size:11px;color:var(--text3)">Vendeur</div><div style="font-size:13px;font-weight:600;color:var(--gold)" id="modal-prod-store">Palace Shop</div></div>
+    </div>
+    <button class="pay-btn" onclick="addToCart(currentProduct); closeModal('modal-product')">
+      🛒 &nbsp;Ajouter au panier
+    </button>
+    <button onclick="openPayment();closeModal('modal-product')" style="width:100%;margin-top:10px;padding:14px;border:1px solid var(--gold);background:none;color:var(--gold);border-radius:14px;font-size:14px;font-weight:600;cursor:pointer">
+      ⚡ Commander maintenant
+    </button>
+    <button onclick="closeModal('modal-product')" style="width:100%;margin-top:8px;padding:12px;border:none;background:none;color:var(--text3);font-size:14px;cursor:pointer">Fermer</button>
+  </div>
+</div>
+
+<!-- Restaurant Modal -->
+<div class="modal-overlay" id="modal-restaurant">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="modal-rest-header"></div>
+    <div id="modal-rest-menu"></div>
+    <button onclick="closeModal('modal-restaurant')" style="width:100%;margin-top:10px;padding:12px;border:none;background:none;color:var(--text3);font-size:14px;cursor:pointer">Fermer</button>
+  </div>
+</div>
+
+<!-- EMA Modal -->
+<div class="modal-overlay" id="modal-ema">
+  <div class="modal-sheet ema-modal">
+    <div class="modal-handle"></div>
+    <div class="ema-header">
+      <div class="ema-avatar">🤖</div>
+      <div class="ema-info">
+        <h3>Ema</h3>
+        <p>Votre assistante Palace Market · Toujours disponible</p>
+      </div>
+    </div>
+    <div class="ema-msgs" id="ema-msgs">
+      <div class="ema-msg ai"><div class="ema-bubble">Bonjour ! Je suis Ema, votre assistante Palace Market. Comment puis-je vous aider aujourd'hui ? 😊</div></div>
+    </div>
+    <div class="ema-quick" id="ema-quick">
+      <button class="ema-quick-btn" onclick="emaQuick('Mes commandes')">📦 Mes commandes</button>
+      <button class="ema-quick-btn" onclick="emaQuick('Jackpot info')">🎰 Jackpot</button>
+      <button class="ema-quick-btn" onclick="emaQuick('Comment payer ?')">💳 Paiement</button>
+      <button class="ema-quick-btn" onclick="emaQuick('Contacter livreur')">🛵 Livreur</button>
+    </div>
+    <div class="ema-input-row">
+      <input class="ema-input" id="ema-input" placeholder="Message à Ema..." onkeypress="if(event.key==='Enter')sendEmaMsg()"/>
+      <button class="ema-send" onclick="sendEmaMsg()">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delivery Code Modal -->
+<div class="modal-overlay" id="modal-code">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔑 Code de Livraison</div>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:48px;font-weight:900;letter-spacing:12px;color:var(--gold);font-family:'Cormorant Garamond',serif" id="delivery-code">A7B2</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:8px">Partagez ce code avec votre livreur à l'arrivée</div>
+    </div>
+    <div style="background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:16px">
+      ✅ Le paiement sera libéré au vendeur dès que le livreur aura saisi ce code.
+    </div>
+    <button class="pay-btn" onclick="closeModal('modal-code')">✓ &nbsp;Compris</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SCRIPT ═══════════════════ -->
+<script>
+// ─── STATE ───
+const App = {
+  user: null,
+  role: 'buyer',
+  cart: [
+    { id:1, name:'iPhone 16 Pro', emoji:'📱', price:12.5, fcfa:8125, store:'TechAfrique', qty:1 },
+    { id:2, name:'Sneakers Air', emoji:'👟', price:4.2, fcfa:2730, store:'Mode Palace', qty:2 },
+  ],
+  tickets: 3,
+  currentCoin: 'USDT',
+  chatContact: null,
+  language: 'fr',
+};
+
+const PRODUCTS = [
+  { id:1, name:'iPhone 16 Pro', emoji:'📱', price:12.5, fcfa:8125, store:'TechAfrique', desc:'Dernier iPhone avec puce A18 · 48MP ProRes · Titanium' },
+  { id:2, name:'Sneakers Air', emoji:'👟', price:4.2, fcfa:2730, store:'Mode Palace', desc:'Baskets premium ultra-légères · Semelle Air Max · Disponible en 5 coloris' },
+  { id:3, name:'Sac Cuir Royal', emoji:'👜', price:8.0, fcfa:5200, store:'Luxe By Kofi', desc:'Sac en cuir véritable artisanal · Fabriqué en Éthiopie · Doublure soie' },
+  { id:4, name:'Montre Smart', emoji:'⌚', price:6.5, fcfa:4225, store:'TechAfrique', desc:'Smartwatch avec suivi santé · GPS intégré · Autonomie 7 jours' },
+  { id:5, name:'Parfum Oud', emoji:'🌸', price:3.8, fcfa:2470, store:'Beauté Palace', desc:'Parfum Oud authentique du Moyen-Orient · 100ml · Longue tenue' },
+  { id:6, name:'Tissu Ankara', emoji:'🎨', price:1.5, fcfa:975, store:'Mode Afrique', desc:'Tissu Ankara 6 yards · Imprimés exclusifs · 100% coton wax' },
+];
+
+const CHAT_CONTACTS = [
+  { id:1, name:'TechAfrique', emoji:'🏪', msg:'Votre commande est expédiée !', time:'14:32', online:true, type:'seller' },
+  { id:2, name:'Moussa – Livreur', emoji:'🛵', msg:'Je serai là dans 10 min', time:'15:05', online:true, type:'delivery' },
+  { id:3, name:'Mode Palace', emoji:'👗', msg:'Merci pour votre commande', time:'Hier', online:false, type:'seller' },
+];
+
+const ORDERS = [
+  { id:'PM-8834', items:'iPhone 16 Pro × 1', total:'12.5 USDT', status:'En livraison', statusClass:'active', date:'Aujourd\'hui 14h30', emoji:'🛵' },
+  { id:'PM-8801', items:'Sneakers Air × 2', total:'8.4 USDT', status:'Livré ✓', statusClass:'done', date:'03 Jan 2025', emoji:'✅' },
+  { id:'PM-8755', items:'Sac Cuir Royal × 1', total:'8.0 USDT', status:'Livré ✓', statusClass:'done', date:'28 Déc 2024', emoji:'✅' },
+];
+
+const NOTIFS = [
+  { icon:'🛵', title:'Livreur en route', desc:'Moussa arrive dans 10 min • Commande #PM-8834', time:'15h12' },
+  { icon:'🎰', title:'Jackpot dimanche !', desc:'Il vous reste 3 tickets. Regardez des pubs pour en gagner plus.', time:'10h00' },
+  { icon:'💰', title:'Paiement reçu', desc:'Vous avez reçu 0.01 USDT en DTC pour 1 pub regardée', time:'Hier' },
+  { icon:'⭐', title:'Nouveau commentaire', desc:'Kofi A. a laissé 5 étoiles sur votre dernière commande', time:'Hier' },
+];
+
+let currentProduct = null;
+let jackpotInterval = null;
+let currentChatConv = [];
+
+// ─── INIT ───
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    showScreen('screen-auth');
+    // Check if delta SDK is available
+    if (window.delta) {
+      checkLanguage();
+    }
+  }, 2600);
+  startJackpotCountdown();
+});
+
+// ─── DELTA AUTH ───
+async function authWithDelta() {
+  try {
+    let res;
+    if (window.delta) {
+      res = await window.delta.authByIdentToken();
+      if (!res) { showToast('Authentification annulée', 'error'); return; }
+      localStorage.setItem('identToken', JSON.stringify(res));
+      App.user = { did: res.dAppIdentToken?.did || 'did:delta:user123', name: 'Palace User', accCanisterId: res.accCanisterId };
+    } else {
+      // Demo mode
+      await delay(1200);
+      App.user = { did: 'did:delta:demo7x9f2k', name: 'Demo Palace', accCanisterId: 'mpxah-3yaaa' };
+      showToast('Mode démo activé', 'info');
+    }
+    updateUserUI();
+    showScreen('screen-role');
+  } catch(e) {
+    console.error(e);
+    // Fallback demo
+    App.user = { did: 'did:delta:demo7x9f2k', name: 'Palace Demo', accCanisterId: 'demo' };
+    updateUserUI();
+    showScreen('screen-role');
+  }
+}
+
+function updateUserUI() {
+  const name = App.user?.name || 'Palace User';
+  const did = App.user?.did || 'did:delta:...';
+  document.getElementById('user-display-name').textContent = name;
+  document.getElementById('profile-name').textContent = name;
+  document.getElementById('profile-did').textContent = did.length > 24 ? did.slice(0,24)+'...' : did;
+  document.getElementById('ema-fab').classList.remove('hidden');
+}
+
+async function checkLanguage() {
+  try {
+    if (window.delta) {
+      const code = await window.delta.languageCode();
+      App.language = code || 'fr';
+    }
+  } catch(e) {}
+}
+
+// ─── ROLE ───
+function selectRole(role) {
+  App.role = role;
+  const roleNames = { buyer:'Acheteur', seller:'Vendeur', delivery:'Livreur' };
+  showToast(`Rôle: ${roleNames[role]} activé ✓`, 'success');
+  initHomeData();
+  showScreen('screen-home');
+  switchTab('home');
+}
+
+function switchRole(btn, role) {
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  App.role = role;
+  const names = { buyer:'Acheteur', seller:'Vendeur', delivery:'Livreur' };
+  showToast(`Rôle changé: ${names[role]}`, 'info');
+}
+
+// ─── NAVIGATION ───
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function switchTab(tab) {
+  const map = { home:'screen-home', search:'screen-search', orders:'screen-orders', chat:'screen-chat', profile:'screen-profile', jackpot:'screen-jackpot' };
+  if (!map[tab]) return;
+  showScreen(map[tab]);
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav').forEach(nav => {
+    const items = nav.querySelectorAll('.nav-item');
+    const idx = ['home','search','orders','chat','profile'].indexOf(tab);
+    if (idx >= 0 && items[idx]) items[idx].classList.add('active');
+  });
+}
+
+// ─── HOME DATA ───
+function initHomeData() {
+  renderProducts('prod-grid', PRODUCTS);
+  renderProducts('search-grid', [...PRODUCTS].sort(() => Math.random()-0.5));
+  renderChatList();
+  renderOrders();
+  renderNotifs();
+  renderSellerOrders();
+  updateCart();
+}
+
+function renderProducts(gridId, prods) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = prods.map(p => `
+    <div class="prod-card" onclick="openProduct(${p.id})">
+      <div class="prod-img">${p.emoji}</div>
+      <div class="prod-body">
+        <div class="prod-name">${p.name}</div>
+        <div class="prod-store">${p.store}</div>
+        <div class="prod-footer">
+          <div>
+            <div class="prod-price">${p.price} DTC</div>
+            <div class="prod-price-fcfa">${p.fcfa.toLocaleString()} FCFA</div>
+          </div>
+          <button class="prod-add" onclick="event.stopPropagation();addToCartById(${p.id})">+</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderChatList() {
+  const list = document.getElementById('chat-list');
+  if (!list) return;
+  list.innerHTML = CHAT_CONTACTS.map(c => `
+    <div class="chat-item" onclick="openChatConv(${c.id})">
+      <div class="chat-item-avatar">${c.emoji}</div>
+      <div class="chat-item-info">
+        <div class="chat-item-name">${c.name} ${c.online ? '<span style="color:#2ECC71;font-size:10px">●</span>' : ''}</div>
+        <div class="chat-item-msg">${c.msg}</div>
+      </div>
+      <div class="chat-item-time">${c.time}</div>
+    </div>
+  `).join('');
+}
+
+function renderOrders() {
+  const list = document.getElementById('orders-list');
+  if (!list) return;
+  list.innerHTML = ORDERS.map(o => `
+    <div style="margin:8px 16px;padding:18px;background:var(--surface);border:1px solid var(--border);border-radius:18px;cursor:pointer" onclick="showDeliveryCode()">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-weight:600;color:var(--gold)">#${o.id}</div>
+        <div style="font-size:12px;padding:4px 10px;border-radius:20px;background:${o.statusClass==='done'?'rgba(46,204,113,0.12)':'rgba(212,175,55,0.12)'};color:${o.statusClass==='done'?'#2ECC71':'var(--gold)'};">${o.emoji} ${o.status}</div>
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:4px">${o.items}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:11px;color:var(--text3)">${o.date}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--gold)">${o.total}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderNotifs() {
+  const list = document.getElementById('notifs-list');
+  if (!list) return;
+  list.innerHTML = NOTIFS.map(n => `
+    <div style="display:flex;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer" onclick="showToast('${n.title}','info')">
+      <div style="font-size:24px;width:40px;height:40px;background:var(--surface2);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${n.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;margin-bottom:3px">${n.title}</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.4">${n.desc}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${n.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSellerOrders() {
+  const list = document.getElementById('seller-orders');
+  if (!list) return;
+  const sellerOrders = [
+    { id:'PM-9001', buyer:'Aminata K.', items:'Tissu Ankara × 3', total:'4.5 USDT', status:'Nouveau', color:'var(--red-light)' },
+    { id:'PM-8998', buyer:'Jean B.', items:'Montre Smart × 1', total:'6.5 USDT', status:'En préparation', color:'var(--gold)' },
+    { id:'PM-8990', buyer:'Seun A.', items:'Sac Cuir × 1', total:'8.0 USDT', status:'Livré ✓', color:'#2ECC71' },
+  ];
+  list.innerHTML = sellerOrders.map(o => `
+    <div style="margin:4px 16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-weight:600;font-size:13px;color:var(--gold)">#${o.id}</span>
+        <span style="font-size:11px;color:${o.color};font-weight:600">${o.status}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text2)">${o.buyer} · ${o.items}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--gold);margin-top:6px">${o.total}</div>
+    </div>
+  `).join('');
+}
+
+// ─── PRODUCTS ───
+function openProduct(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  currentProduct = p;
+  document.getElementById('modal-prod-img').textContent = p.emoji;
+  document.getElementById('modal-prod-name').textContent = p.name;
+  document.getElementById('modal-prod-desc').textContent = p.desc;
+  document.getElementById('modal-prod-price').textContent = `${p.price} DTC`;
+  document.getElementById('modal-prod-fcfa').textContent = `≈ ${p.fcfa.toLocaleString()} FCFA`;
+  document.getElementById('modal-prod-store').textContent = p.store;
+  openModal('modal-product');
+}
+
+function filterCat(el, cat) {
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const filtered = cat === 'all' ? PRODUCTS : PRODUCTS.filter(p => {
+    const catMap = { food:'🍽', fashion:'👗👟👜', tech:'📱⌚', beauty:'💄🌸', home:'🏠', sports:'⚽' };
+    return catMap[cat] && catMap[cat].includes(p.emoji);
+  });
+  renderProducts('prod-grid', filtered.length ? filtered : PRODUCTS);
+}
+
+function handleSearch(val) {
+  const q = val.toLowerCase();
+  const res = q ? PRODUCTS.filter(p => p.name.toLowerCase().includes(q) || p.store.toLowerCase().includes(q)) : PRODUCTS;
+  renderProducts('search-grid', res);
+}
+
+// ─── CART ───
+function addToCartById(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (p) addToCart(p);
+}
+
+function addToCart(p) {
+  const existing = App.cart.find(x => x.id === p.id);
+  if (existing) { existing.qty++; }
+  else { App.cart.push({ ...p, qty: 1 }); }
+  updateCart();
+  showToast(`${p.name} ajouté au panier 🛒`, 'success');
+}
+
+function updateCart() {
+  const total = App.cart.reduce((s, x) => s + x.price * x.qty, 0);
+  const badge = document.getElementById('cart-badge');
+  const count = App.cart.reduce((s, x) => s + x.qty, 0);
+  if (badge) badge.textContent = count;
+  document.getElementById('subtotal').textContent = `${total.toFixed(2)} DTC`;
+  document.getElementById('total-price').textContent = `${(total + 0.5).toFixed(2)} DTC`;
+  renderCartItems();
+}
+
+function renderCartItems() {
+  const el = document.getElementById('cart-items');
+  if (!el) return;
+  if (App.cart.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">🛒</div><div>Votre panier est vide</div></div>';
+    return;
+  }
+  el.innerHTML = App.cart.map(item => `
+    <div class="cart-item">
+      <div class="cart-item-img">${item.emoji}</div>
+      <div class="cart-item-info">
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-price">${(item.price * item.qty).toFixed(2)} DTC</div>
+      </div>
+      <div class="cart-qty">
+        <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+        <div class="qty-num">${item.qty}</div>
+        <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function changeQty(id, delta) {
+  const item = App.cart.find(x => x.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) App.cart = App.cart.filter(x => x.id !== id);
+  updateCart();
+}
+
+function clearCart() {
+  App.cart = [];
+  updateCart();
+  showToast('Panier vidé', 'info');
+}
+
+// ─── PAYMENT ───
+function openPayment() {
+  const total = App.cart.reduce((s, x) => s + x.price * x.qty, 0.5);
+  document.getElementById('pay-amount').textContent = `${total.toFixed(2)} ${App.currentCoin}`;
+  document.getElementById('pay-fiat').textContent = `≈ ${Math.round(total * 650).toLocaleString()} FCFA`;
+  openModal('modal-payment');
+}
+
+function selectCoin(btn, coin) {
+  document.querySelectorAll('.coin-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  App.currentCoin = coin;
+  const total = App.cart.reduce((s, x) => s + x.price * x.qty, 0.5);
+  const rates = { USDT: 1, DTC: 1.2, ICP: 0.08 };
+  const converted = (total / (rates[coin] || 1)).toFixed(4);
+  document.getElementById('pay-amount').textContent = `${converted} ${coin}`;
+  document.getElementById('pay-fiat').textContent = `≈ ${Math.round(total * 650).toLocaleString()} FCFA`;
+}
+
+async function executePayment() {
+  closeModal('modal-payment');
+  showToast('Traitement du paiement Delta...', 'info');
+  try {
+    if (window.delta) {
+      const total = App.cart.reduce((s, x) => s + x.price * x.qty, 0.5);
+      await window.delta.walletPayment(App.currentCoin, 'palace-escrow-wallet', total, 'Palace Market Order');
+    } else {
+      await delay(1500);
+    }
+    App.cart = [];
+    updateCart();
+    showToast('✅ Paiement réussi ! Commande confirmée', 'success');
+    setTimeout(() => { showDeliveryCode(); }, 1200);
+  } catch(e) {
+    showToast('Paiement annulé', 'error');
+  }
+}
+
+// ─── RESTAURANTS ───
+function openRestaurant(name) {
+  const menus = {
+    'Le Sénégalais': [
+      { name:'Thiéboudienne', price:'1.8 DTC', emoji:'🍲', fcfa:'1,170 FCFA' },
+      { name:'Yassa Poulet', price:'1.5 DTC', emoji:'🍗', fcfa:'975 FCFA' },
+      { name:'Mafé Bœuf', price:'1.6 DTC', emoji:'🥘', fcfa:'1,040 FCFA' },
+    ],
+    default: [
+      { name:'Plat du jour', price:'1.2 DTC', emoji:'🍽', fcfa:'780 FCFA' },
+      { name:'Spécialité maison', price:'1.8 DTC', emoji:'⭐', fcfa:'1,170 FCFA' },
+      { name:'Dessert royal', price:'0.8 DTC', emoji:'🍮', fcfa:'520 FCFA' },
+    ]
+  };
+  const items = menus[name] || menus.default;
+  document.getElementById('modal-rest-header').innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:48px;margin-bottom:8px">🍽</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--gold)">${name}</div>
+      <div style="color:var(--gold);margin-top:4px">★★★★★ <span style="color:var(--text3);font-size:12px">4.8 · 20-30 min</span></div>
+    </div>`;
+  document.getElementById('modal-rest-menu').innerHTML = items.map(i => `
+    <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:10px">
+      <div style="font-size:32px">${i.emoji}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600">${i.name}</div>
+        <div style="font-size:11px;color:var(--text3)">${i.fcfa}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:700;color:var(--gold)">${i.price}</div>
+        <button style="margin-top:4px;padding:4px 12px;background:var(--gold);border:none;border-radius:8px;color:#000;font-size:12px;font-weight:600;cursor:pointer" onclick="showToast('Ajouté au panier 🛒','success')">+ Ajouter</button>
+      </div>
+    </div>
+  `).join('');
+  openModal('modal-restaurant');
+}
+
+// ─── CHAT ───
+function openChatConv(id) {
+  const contact = CHAT_CONTACTS.find(c => c.id === id);
+  if (!contact) return;
+  App.chatContact = contact;
+  document.getElementById('conv-avatar').textContent = contact.emoji;
+  document.getElementById('conv-name').textContent = contact.name;
+  document.getElementById('conv-status').textContent = contact.online ? 'En ligne' : 'Hors ligne';
+  currentChatConv = [
+    { from:'them', text: contact.type === 'delivery' ? 'Bonjour ! Je suis en route pour votre livraison.' : 'Bonjour ! Comment puis-je vous aider ?' },
+    { from:'me', text: 'Bonjour, merci !' },
+    { from:'them', text: contact.msg },
+  ];
+  renderConv();
+  showScreen('screen-chat-conv');
+}
+
+function renderConv() {
+  const el = document.getElementById('chat-messages');
+  if (!el) return;
+  el.innerHTML = currentChatConv.map(m => `
+    <div class="msg ${m.from==='me'?'sent':'recv'}">
+      <div class="msg-bubble">${m.text}</div>
+      <div class="msg-time">${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}</div>
+    </div>
+  `).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function sendChatMsg() {
+  const input = document.getElementById('chat-input-field');
+  const val = input.value.trim();
+  if (!val) return;
+  currentChatConv.push({ from:'me', text: val });
+  input.value = '';
+  renderConv();
+  setTimeout(() => {
+    currentChatConv.push({ from:'them', text: 'Message reçu ✓' });
+    renderConv();
+  }, 800);
+}
+
+// ─── EMA AI ───
+function openEma() {
+  closeAllModals();
+  openModal('modal-ema');
+}
+
+function emaQuick(q) {
+  document.getElementById('ema-input').value = q;
+  sendEmaMsg();
+}
+
+async function sendEmaMsg() {
+  const input = document.getElementById('ema-input');
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = '';
+  const msgs = document.getElementById('ema-msgs');
+  msgs.innerHTML += `<div class="ema-msg user"><div class="ema-bubble">${val}</div></div>`;
+  msgs.innerHTML += `<div class="ema-msg ai" id="ema-typing"><div class="ema-bubble" style="color:var(--text3)">Ema réfléchit...</div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  const responses = {
+    'mes commandes': '📦 Vous avez 3 commandes. La dernière (#PM-8834) est en cours de livraison. Moussa est à 1.2 km de chez vous !',
+    'jackpot': '🎰 Le prochain Jackpot est dimanche à 20h GMT ! Vous avez 3 tickets. Regardez des pubs pour en gagner plus (+0.01 USDT en DTC par pub) !',
+    'comment payer': '💳 Tout se passe via Delta Wallet ! Vous pouvez payer en USDT, DTC ou ICP. Le paiement est en escrow jusqu\'à la confirmation de livraison. 100% sécurisé !',
+    'contacter livreur': '🛵 Votre livreur Moussa est disponible dans la section Messages. Vous pouvez le contacter directement via le chat !',
+    default: '😊 Je suis Ema, votre assistante Palace Market ! Je peux vous aider avec vos commandes, le jackpot, les paiements, et bien plus. Comment puis-je vous aider ?'
+  };
+  const key = Object.keys(responses).find(k => val.toLowerCase().includes(k)) || 'default';
+  await delay(1000);
+  document.getElementById('ema-typing').innerHTML = `<div class="ema-bubble">${responses[key]}</div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ─── JACKPOT ───
+function startJackpotCountdown() {
+  function getNextSunday20h() {
+    const now = new Date();
+    const utc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds()));
+    const dayOfWeek = utc.getUTCDay(); // 0=Sun
+    let daysUntil = (7 - dayOfWeek) % 7;
+    if (daysUntil === 0 && utc.getUTCHours() >= 20) daysUntil = 7;
+    const next = new Date(Date.UTC(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate() + daysUntil, 20, 0, 0));
+    return next;
+  }
+
+  function update() {
+    const now = new Date();
+    const target = getNextSunday20h();
+    const diff = Math.max(0, target - now);
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    const fmt = n => String(n).padStart(2,'0');
+    ['jp-days','jp-hours','jp-mins','jp-secs'].forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = fmt([d,h,m,s][i]);
+    });
+    const homeEl = document.getElementById('home-countdown');
+    if (homeEl) homeEl.textContent = `${fmt(d)}j ${fmt(h)}h`;
+  }
+  update();
+  jackpotInterval = setInterval(update, 1000);
+}
+
+async function watchAd() {
+  showToast('Chargement de la pub...', 'info');
+  await delay(800);
+  if (window.delta) {
+    window.delta.showAd('PALACE_REWARDED', {
+      onShow() { showToast('Pub en cours...', 'info'); },
+      onClose() { rewardUser(); },
+      onError(e) { rewardUser(); }
+    });
+  } else {
+    await delay(1500);
+    rewardUser();
+  }
+}
+
+function rewardUser() {
+  App.tickets++;
+  document.getElementById('ticket-count').textContent = `${App.tickets} tickets`;
+  document.querySelector('.jackpot-tickets').textContent = `🎟 ${App.tickets} tickets`;
+  showToast(`+1 Ticket 🎟 · +0.01 USDT en DTC gagné !`, 'success');
+}
+
+function participateJackpot() {
+  if (App.tickets <= 0) { showToast('Vous n\'avez pas de tickets ! Regardez des pubs.', 'error'); return; }
+  if (!confirm(`Utiliser 1 ticket pour participer au tirage ?\nIl vous restera ${App.tickets - 1} ticket(s).`)) return;
+  App.tickets--;
+  document.getElementById('ticket-count').textContent = `${App.tickets} tickets`;
+  showToast('🎰 Participation enregistrée ! Rendez-vous dimanche à 20h GMT.', 'success');
+}
+
+// ─── SELLER ───
+function showSellerDashboard() {
+  document.getElementById('store-name').textContent = App.user?.name + ' Shop' || 'Ma Boutique Palace';
+  showScreen('screen-seller');
+}
+
+// ─── DELIVERY CODE ───
+function showDeliveryCode() {
+  const code = Math.random().toString(36).substring(2,6).toUpperCase();
+  document.getElementById('delivery-code').textContent = code;
+  openModal('modal-code');
+}
+
+// ─── LANGUAGE ───
+async function changeLanguage() {
+  try {
+    if (window.delta) {
+      const code = await window.delta.languageCode();
+      showToast(`Langue: ${code}`, 'info');
+    } else {
+      showToast('Langue: Français (fr)', 'info');
+    }
+  } catch(e) { showToast('Langue: Français', 'info'); }
+}
+
+// ─── LOGOUT ───
+function logout() {
+  App.user = null;
+  localStorage.removeItem('identToken');
+  document.getElementById('ema-fab').classList.add('hidden');
+  showScreen('screen-auth');
+  showToast('Déconnexion réussie', 'info');
+}
+
+// ─── MODAL ───
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function closeAllModals() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+}
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ─── TOAST ───
+let toastTimeout;
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── UTILS ───
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>

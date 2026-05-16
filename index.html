@@ -1,0 +1,4091 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Palace Market</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --gold: #D4AF37;
+  --gold-light: #F5E27A;
+  --gold-dark: #A8861F;
+  --red: #C0392B;
+  --red-light: #E74C3C;
+  --white: #FFFFFF;
+  --off-white: #FAF8F3;
+  --bg: #0D0A06;
+  --bg2: #161208;
+  --bg3: #1E1710;
+  --surface: #221C0E;
+  --surface2: #2A2214;
+  --border: rgba(212,175,55,0.18);
+  --text: #F5F0E8;
+  --text2: #B8A878;
+  --text3: #7A6C48;
+  --shadow-gold: 0 4px 32px rgba(212,175,55,0.18);
+  --shadow-red: 0 4px 32px rgba(192,57,43,0.22);
+  --radius: 18px;
+  --radius-sm: 10px;
+}
+
+.msg-bubble {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  position: relative;
+}
+
+.reply-preview {
+  background: rgba(0,0,0,0.1);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  margin-bottom: 6px;
+  border-left: 3px solid var(--gold);
+  color: var(--text3);
+}
+
+.ema-msg.user { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.ema-msg.ai { display: flex; justify-content: flex-start; margin-bottom: 12px; }
+.ema-bubble {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ema-msg.user .ema-bubble { background: var(--gold); color: #000; border-bottom-right-radius: 4px; }
+.ema-msg.ai .ema-bubble { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.dash-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  text-align: center;
+}
+
+.dash-card-num {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.dash-card-label {
+  font-size: 11px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; overflow:hidden; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  position: relative;
+  max-width: 430px;
+  margin: 0 auto;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* ─── BACKGROUND PATTERN ─── */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(212,175,55,0.10) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 30% at 100% 110%, rgba(192,57,43,0.08) 0%, transparent 60%);
+  pointer-events:none; z-index:0;
+}
+
+/* ─── SCREENS ─── */
+.screen {
+  position: absolute; inset:0;
+  display: none; flex-direction: column;
+  overflow: hidden; z-index:1;
+  animation: fadeIn 0.35s ease;
+}
+.screen.active { display:flex; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── SPLASH ─── */
+#screen-splash {
+  align-items:center; justify-content:center;
+  background: radial-gradient(ellipse at center, #1A1208 0%, #080503 100%);
+}
+.splash-logo {
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+.splash-crown {
+  font-size:64px; animation: float 3s ease-in-out infinite;
+}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.splash-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:48px; font-weight:700;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  letter-spacing:3px;
+}
+.splash-sub {
+  font-size:13px; color:var(--text3); letter-spacing:4px; text-transform:uppercase;
+}
+.splash-loader {
+  width:200px; height:2px; background:var(--surface2); border-radius:2px; overflow:hidden;
+  margin-top:48px;
+}
+.splash-loader-bar {
+  height:100%; background:linear-gradient(90deg, var(--gold-dark), var(--gold-light));
+  animation: load 2.2s ease forwards;
+}
+@keyframes load { from{width:0} to{width:100%} }
+
+/* ─── AUTH ─── */
+#screen-auth {
+  align-items:center; justify-content:center; padding:32px;
+  background: radial-gradient(ellipse at 30% 0%, rgba(212,175,55,0.08) 0%, transparent 60%);
+}
+.auth-card {
+  width:100%; background:var(--surface); border:1px solid var(--border);
+  border-radius:24px; padding:36px 28px; text-align:center;
+  box-shadow: var(--shadow-gold), inset 0 1px 0 rgba(212,175,55,0.12);
+}
+.auth-icon { font-size:52px; margin-bottom:20px; }
+.auth-title {
+  font-family:'Cormorant Garamond',serif; font-size:30px; font-weight:700;
+  color:var(--gold); margin-bottom:8px;
+}
+.auth-desc { font-size:14px; color:var(--text2); line-height:1.6; margin-bottom:32px; }
+.btn-delta {
+  width:100%; padding:16px; border:none; border-radius:var(--radius);
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold), var(--gold-light));
+  color:#000; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600;
+  cursor:pointer; letter-spacing:0.5px;
+  box-shadow: 0 4px 20px rgba(212,175,55,0.4);
+  transition:all 0.2s; position:relative; overflow:hidden;
+}
+.btn-delta::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.3) 60%, transparent 70%);
+  transform:translateX(-100%); transition:transform 0.4s;
+}
+.btn-delta:hover::after { transform:translateX(100%); }
+.btn-delta:active { transform:scale(0.97); }
+
+/* screen-role supprimé */
+.role-header { text-align:center; margin-bottom:32px; }
+.role-header h2 {
+  font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:700; color:var(--gold);
+}
+.role-header p { font-size:13px; color:var(--text2); margin-top:6px; }
+.role-cards { display:flex; flex-direction:column; gap:14px; }
+.role-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:20px;
+  padding:20px; display:flex; align-items:center; gap:16px; cursor:pointer;
+  transition:all 0.25s; position:relative; overflow:hidden;
+}
+.role-card::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:var(--gold); border-radius:3px 0 0 3px; opacity:0; transition:opacity 0.2s;
+}
+.role-card:hover::before, .role-card:active::before { opacity:1; }
+.role-card:hover { background:var(--surface2); border-color:rgba(212,175,55,0.35); transform:translateX(4px); }
+.role-icon { font-size:36px; width:56px; height:56px; background:var(--surface2); border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.role-info h3 { font-size:16px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.role-info p { font-size:12px; color:var(--text2); line-height:1.4; }
+.role-arrow { margin-left:auto; color:var(--gold); font-size:18px; opacity:0.6; }
+
+/* ─── TOP BAR ─── */
+.topbar {
+  padding:14px 20px 10px;
+  display:flex; align-items:center; gap:12px;
+  background:linear-gradient(to bottom, var(--bg2), transparent);
+  flex-shrink:0; z-index:10;
+}
+.topbar-logo {
+  font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:700;
+  background:linear-gradient(135deg, var(--gold-light), var(--gold));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  flex:1;
+}
+.topbar-icon-btn {
+  width:40px; height:40px; border:none; background:var(--surface); border-radius:12px;
+  color:var(--text2); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--border); transition:all 0.2s; position:relative;
+}
+.topbar-icon-btn:hover { background:var(--surface2); color:var(--gold); }
+.badge {
+  position:absolute; top:-4px; right:-4px; background:var(--red); color:#fff;
+  font-size:9px; font-weight:700; width:16px; height:16px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; border:2px solid var(--bg);
+}
+
+/* ─── SCROLL AREA ─── */
+.scroll-area {
+  flex:1; overflow-y:auto; overflow-x:hidden;
+  -webkit-overflow-scrolling:touch; scroll-behavior:smooth;
+}
+.scroll-area::-webkit-scrollbar { width:3px; }
+.scroll-area::-webkit-scrollbar-thumb { background:var(--surface2); border-radius:3px; }
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav {
+  height:70px; background:var(--bg2); border-top:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-around;
+  padding:0 8px 8px; flex-shrink:0;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+}
+.nav-item {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  cursor:pointer; padding:8px 12px; border-radius:12px;
+  transition:all 0.2s; flex:1;
+}
+.nav-item.active { background:rgba(212,175,55,0.08); }
+.nav-icon { font-size:22px; transition:transform 0.2s; }
+.nav-item.active .nav-icon { transform:scale(1.1); }
+.nav-label { font-size:10px; color:var(--text3); transition:color 0.2s; letter-spacing:0.3px; }
+.nav-item.active .nav-label { color:var(--gold); font-weight:600; }
+
+/* ─── HOME SCREEN ─── */
+.home-hero {
+  margin:8px 16px 0; padding:22px; background:var(--surface);
+  border-radius:22px; border:1px solid var(--border);
+  background:linear-gradient(135deg, var(--surface) 0%, #1A1408 100%);
+  position:relative; overflow:hidden;
+}
+.home-hero::after {
+  content:'👑'; position:absolute; right:-10px; bottom:-10px; font-size:80px; opacity:0.06;
+}
+.home-greeting { font-size:13px; color:var(--text2); margin-bottom:4px; }
+.home-name { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:var(--gold); margin-bottom:14px; }
+.home-balance-label { font-size:11px; color:var(--text3); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+.home-balance { font-size:32px; font-weight:600; color:var(--text); }
+.home-balance span { font-size:14px; color:var(--text2); margin-left:6px; }
+
+.section-title {
+  font-size:13px; font-weight:600; color:var(--text2); letter-spacing:1.5px;
+  text-transform:uppercase; padding:20px 20px 10px;
+}
+
+/* ─── CATEGORIES ─── */
+.cats-scroll {
+  display:flex; gap:10px; padding:0 16px 4px; overflow-x:auto;
+}
+.cats-scroll::-webkit-scrollbar { display:none; }
+.cat-chip {
+  flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:14px 16px; background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; cursor:pointer; transition:all 0.2s; min-width:72px;
+}
+.cat-chip:hover, .cat-chip.active {
+  background:var(--surface2); border-color:var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+.cat-chip-icon { font-size:24px; }
+.cat-chip-label { font-size:11px; color:var(--text2); white-space:nowrap; font-weight:500; }
+.cat-chip.active .cat-chip-label { color:var(--gold); }
+
+/* ─── PRODUCT GRID ─── */
+.prod-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:4px 16px 16px;
+}
+.prod-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:18px;
+  overflow:hidden; cursor:pointer; transition:all 0.25s;
+  position:relative;
+}
+.prod-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-gold); border-color:rgba(212,175,55,0.3); }
+.prod-img {
+  width:100%; height:120px; object-fit:cover;
+  background:var(--surface2); display:flex; align-items:center; justify-content:center;
+  font-size:42px;
+}
+.prod-body { padding:12px; }
+.prod-name { font-size:13px; font-weight:600; color:var(--text); margin-bottom:4px; line-height:1.3; }
+.prod-store { font-size:11px; color:var(--text3); margin-bottom:8px; }
+.prod-footer { display:flex; align-items:center; justify-content:space-between; }
+.prod-price { font-size:13px; font-weight:700; color:var(--gold); }
+.prod-price-fcfa { font-size:10px; color:var(--text3); }
+.prod-add {
+  width:28px; height:28px; background:var(--gold); border:none; border-radius:8px;
+  color:#000; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-weight:700; transition:all 0.2s;
+}
+.prod-add:hover { background:var(--gold-light); transform:scale(1.1); }
+
+/* ─── RESTAURANT CARDS ─── */
+.rest-scroll {
+  display:flex; gap:12px; padding:0 16px 8px; overflow-x:auto;
+}
+.rest-scroll::-webkit-scrollbar { display:none; }
+.rest-card {
+  flex-shrink:0; width:200px; background:var(--surface); border:1px solid var(--border);
+  border-radius:18px; overflow:hidden; cursor:pointer; transition:all 0.25s;
+}
+.rest-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-gold); }
+.rest-img {
+  width:100%; height:100px; background:var(--surface2); display:flex;
+  align-items:center; justify-content:center; font-size:48px;
+}
+.rest-body { padding:12px; }
+.rest-name { font-size:14px; font-weight:600; margin-bottom:4px; }
+.rest-meta { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--text3); }
+.rest-rating { color:var(--gold); font-weight:600; }
+.rest-badge {
+  display:inline-block; padding:3px 8px; background:rgba(212,175,55,0.12);
+  border:1px solid rgba(212,175,55,0.25); border-radius:20px;
+  font-size:10px; color:var(--gold); font-weight:600;
+}
+
+/* ─── JACKPOT BANNER ─── */
+.jackpot-banner {
+  margin:4px 16px 4px; padding:18px 20px; border-radius:20px;
+  background:linear-gradient(135deg, #1A0808 0%, #2A0E0E 50%, #1A0808 100%);
+  border:1px solid rgba(192,57,43,0.4); position:relative; overflow:hidden; cursor:pointer;
+}
+.jackpot-banner::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 80% 50%, rgba(192,57,43,0.15) 0%, transparent 60%);
+}
+.jackpot-inner { display:flex; align-items:center; gap:14px; position:relative; }
+.jackpot-icon { font-size:40px; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+.jackpot-info { flex:1; }
+.jackpot-label { font-size:10px; letter-spacing:2px; color:var(--red-light); text-transform:uppercase; font-weight:600; margin-bottom:3px; }
+.jackpot-title { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:700; color:var(--white); margin-bottom:2px; }
+.jackpot-sub { font-size:11px; color:rgba(255,255,255,0.5); }
+.jackpot-timer { text-align:center; }
+.jackpot-time { font-size:22px; font-weight:700; color:var(--red-light); font-variant-numeric:tabular-nums; }
+.jackpot-tickets { font-size:10px; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* ─── EMA AI ─── */
+.ema-fab {
+  position:fixed; bottom:88px; right:20px; z-index:100;
+  width:52px; height:52px; border-radius:50%;
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold));
+  border:none; cursor:pointer; font-size:24px;
+  box-shadow: 0 4px 20px rgba(212,175,55,0.5);
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.3s; animation: emaPulse 3s infinite;
+}
+@keyframes emaPulse {
+  0%,100%{box-shadow:0 4px 20px rgba(212,175,55,0.5)}
+  50%{box-shadow:0 4px 32px rgba(212,175,55,0.8), 0 0 0 8px rgba(212,175,55,0.1)}
+}
+.ema-fab:hover { transform:scale(1.08); }
+
+/* ─── CHAT SCREEN ─── */
+#screen-chat .chat-header {
+  padding:16px 20px; display:flex; align-items:center; gap:12px;
+  border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.chat-back { font-size:22px; cursor:pointer; color:var(--gold); }
+.chat-avatar { width:40px; height:40px; border-radius:50%; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:20px; }
+.chat-contact h3 { font-size:15px; font-weight:600; }
+.chat-contact p { font-size:11px; color:var(--text3); }
+.chat-online { display:inline-block; width:8px; height:8px; background:#2ECC71; border-radius:50%; margin-right:4px; }
+.chat-msgs { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+.chat-msgs::-webkit-scrollbar { width:2px; }
+.msg { max-width:75%; }
+.msg.sent { align-self:flex-end; }
+.msg.recv { align-self:flex-start; }
+.msg-bubble {
+  padding:10px 14px; border-radius:18px; font-size:14px; line-height:1.5;
+}
+.msg.sent .msg-bubble {
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color:#000; border-bottom-right-radius:4px;
+}
+.msg.recv .msg-bubble {
+  background:var(--surface2); color:var(--text); border-bottom-left-radius:4px;
+  border:1px solid var(--border);
+}
+.msg-time { font-size:10px; color:var(--text3); margin-top:4px; text-align:right; }
+.msg.recv .msg-time { text-align:left; }
+.chat-input-bar {
+  padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:10px; align-items:center; flex-shrink:0;
+}
+.chat-input {
+  flex:1; background:var(--surface); border:1px solid var(--border); border-radius:24px;
+  padding:11px 18px; color:var(--text); font-size:14px; outline:none;
+  font-family:'DM Sans',sans-serif;
+}
+.chat-input::placeholder { color:var(--text3); }
+.chat-send {
+  width:44px; height:44px; background:var(--gold); border:none; border-radius:50%;
+  color:#000; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:all 0.2s;
+}
+.chat-send:hover { background:var(--gold-light); transform:scale(1.05); }
+.chat-list { flex:1; overflow-y:auto; }
+.chat-item {
+  display:flex; align-items:center; gap:12px; padding:14px 20px;
+  cursor:pointer; transition:background 0.15s; border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.chat-item:hover { background:var(--surface); }
+.chat-item-avatar { width:48px; height:48px; border-radius:50%; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.chat-item-info { flex:1; }
+.chat-item-name { font-size:14px; font-weight:600; margin-bottom:3px; }
+.chat-item-msg { font-size:12px; color:var(--text3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+.chat-item-time { font-size:11px; color:var(--text3); }
+
+/* ─── JACKPOT SCREEN ─── */
+#screen-jackpot { background:radial-gradient(ellipse at center top, #1A0808 0%, var(--bg) 50%); }
+.jp-hero {
+  text-align:center; padding:32px 20px 20px; position:relative;
+}
+.jp-trophy { font-size:72px; animation:float 3s ease-in-out infinite; display:block; }
+.jp-title { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:700; color:var(--gold); margin:12px 0 4px; }
+.jp-sub { font-size:13px; color:var(--text2); }
+.jp-countdown {
+  display:flex; gap:12px; justify-content:center; margin:20px 0;
+}
+.jp-count-item { text-align:center; }
+.jp-count-num {
+  width:64px; height:64px; background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; display:flex; align-items:center; justify-content:center;
+  font-size:28px; font-weight:700; color:var(--gold); font-variant-numeric:tabular-nums;
+}
+.jp-count-label { font-size:10px; color:var(--text3); margin-top:5px; text-transform:uppercase; letter-spacing:1px; }
+.jp-sep { color:var(--gold); font-size:28px; align-self:flex-start; margin-top:18px; opacity:0.5; }
+
+.jp-tickets {
+  margin:0 16px; padding:20px; background:var(--surface); border:1px solid var(--border);
+  border-radius:20px;
+}
+.jp-tickets-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.jp-tickets-title { font-size:16px; font-weight:600; }
+.jp-ticket-count {
+  padding:6px 16px; background:rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.3);
+  border-radius:20px; font-size:14px; font-weight:700; color:var(--gold);
+}
+.jp-ad-btn {
+  width:100%; padding:14px; border:none; border-radius:14px;
+  background:linear-gradient(135deg, var(--red) 0%, var(--red-light) 100%);
+  color:#fff; font-size:14px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:all 0.2s;
+}
+.jp-ad-btn:hover { transform:translateY(-2px); box-shadow:var(--shadow-red); }
+.jp-ad-info { font-size:12px; color:var(--text3); text-align:center; margin-top:8px; }
+.jp-participate {
+  margin:12px 16px 0; padding:14px; border:none; border-radius:14px; width:calc(100% - 32px);
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color:#000; font-size:15px; font-weight:700; cursor:pointer;
+  transition:all 0.2s;
+}
+.jp-participate:hover { transform:translateY(-2px); box-shadow:var(--shadow-gold); }
+.jp-prev-winners {
+  margin:16px 16px 0; padding:18px; background:var(--surface); border:1px solid var(--border); border-radius:20px;
+}
+.jp-winner-item { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.jp-winner-item:last-child { border:none; }
+.jp-winner-rank { font-size:20px; width:32px; }
+.jp-winner-info { flex:1; }
+.jp-winner-name { font-size:13px; font-weight:600; }
+.jp-winner-did { font-size:11px; color:var(--text3); }
+.jp-winner-prize { font-size:14px; font-weight:700; color:var(--gold); }
+
+/* ─── PROFILE SCREEN ─── */
+.profile-hero {
+  padding:24px 20px; text-align:center;
+  background:linear-gradient(to bottom, var(--surface), transparent);
+  margin-bottom:8px;
+}
+.profile-avatar {
+  width:80px; height:80px; border-radius:50%; background:var(--surface2);
+  display:flex; align-items:center; justify-content:center; font-size:36px;
+  margin:0 auto 12px; border:3px solid var(--gold);
+}
+.profile-name { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:700; color:var(--gold); }
+.profile-did { font-size:11px; color:var(--text3); margin-top:4px; letter-spacing:0.5px; }
+.profile-role-btns { display:flex; gap:8px; justify-content:center; margin-top:14px; }
+.role-btn {
+  padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer;
+  border:1px solid var(--border); background:var(--surface); color:var(--text2);
+  transition:all 0.2s;
+}
+.role-btn.active { background:var(--gold); color:#000; border-color:var(--gold); }
+.profile-stats {
+  display:flex; gap:1px; margin:0 16px; background:var(--border); border-radius:16px; overflow:hidden;
+}
+.stat-item { flex:1; background:var(--surface); padding:14px 8px; text-align:center; }
+.stat-num { font-size:20px; font-weight:700; color:var(--gold); }
+.stat-label { font-size:10px; color:var(--text3); margin-top:2px; text-transform:uppercase; letter-spacing:0.8px; }
+.profile-menu { margin:16px; display:flex; flex-direction:column; gap:2px; }
+.profile-menu-item {
+  display:flex; align-items:center; gap:14px; padding:16px; background:var(--surface);
+  border-radius:12px; cursor:pointer; transition:all 0.2s;
+}
+.profile-menu-item:hover { background:var(--surface2); }
+.menu-icon { font-size:20px; width:36px; height:36px; background:var(--surface2); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.menu-label { flex:1; font-size:14px; font-weight:500; }
+.menu-arrow { color:var(--text3); font-size:16px; }
+.menu-badge { background:var(--red); color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; }
+
+/* ─── ORDER TRACK ─── */
+.order-track { margin:12px 16px; padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:20px; }
+.track-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.track-id { font-size:13px; font-weight:600; color:var(--gold); }
+.track-status { font-size:11px; color:var(--text3); }
+.track-steps { display:flex; flex-direction:column; gap:0; }
+.track-step { display:flex; gap:14px; position:relative; }
+.track-step:not(:last-child) .step-line {
+  position:absolute; left:14px; top:30px; width:2px; height:calc(100% - 10px);
+  background:var(--border);
+}
+.track-step.done .step-line { background:var(--gold); }
+.step-dot {
+  width:28px; height:28px; border-radius:50%; border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;
+  background:var(--surface2); z-index:1; margin-top:2px;
+}
+.track-step.done .step-dot { background:var(--gold); border-color:var(--gold); color:#000; }
+.track-step.active .step-dot { border-color:var(--gold); background:rgba(212,175,55,0.15); animation:stepPulse 1.5s infinite; }
+@keyframes stepPulse { 0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,0.4)} 50%{box-shadow:0 0 0 8px rgba(212,175,55,0)} }
+.step-info { padding:4px 0 20px; }
+.step-title { font-size:13px; font-weight:600; margin-bottom:2px; }
+.step-desc { font-size:11px; color:var(--text3); }
+
+/* ─── CART SCREEN ─── */
+#screen-cart .cart-item {
+  display:flex; gap:12px; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.05);
+  align-items:center;
+}
+.cart-item-img { width:56px; height:56px; border-radius:12px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
+.cart-item-info { flex:1; }
+.cart-item-name { font-size:14px; font-weight:600; margin-bottom:4px; }
+.cart-item-price { font-size:13px; color:var(--gold); font-weight:600; }
+.cart-qty { display:flex; align-items:center; gap:10px; }
+.qty-btn { width:28px; height:28px; border:1px solid var(--border); background:var(--surface2); border-radius:8px; color:var(--text); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.qty-num { font-size:14px; font-weight:600; min-width:20px; text-align:center; }
+.cart-summary { margin:16px; padding:18px; background:var(--surface); border:1px solid var(--border); border-radius:18px; }
+.summary-row { display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px; color:var(--text2); }
+.summary-row.total { color:var(--text); font-weight:700; font-size:16px; border-top:1px solid var(--border); padding-top:10px; margin-top:4px; }
+.summary-row.total .price { color:var(--gold); }
+.checkout-btn {
+  margin:0 16px 16px; width:calc(100% - 32px); padding:16px; border:none; border-radius:16px;
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color:#000; font-size:16px; font-weight:700; cursor:pointer; transition:all 0.2s;
+}
+.checkout-btn:hover { transform:translateY(-2px); box-shadow:var(--shadow-gold); }
+
+/* ─── TOAST ─── */
+.toast {
+  position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-80px);
+  background:var(--surface2); border:1px solid var(--border); border-radius:12px;
+  padding:12px 20px; font-size:13px; font-weight:500; z-index:9999;
+  transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  white-space:nowrap; box-shadow:var(--shadow-gold);
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+.toast.success { border-color:rgba(46,204,113,0.4); color:#2ECC71; }
+.toast.error { border-color:rgba(192,57,43,0.4); color:var(--red-light); }
+.toast.info { border-color:var(--border); color:var(--gold); }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:500;
+  display:none; align-items:flex-end; justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open { display:flex; }
+.modal-sheet {
+  width:100%; max-width:430px; background:var(--bg2); border-radius:24px 24px 0 0;
+  border-top:1px solid var(--border); padding:24px 20px 32px;
+  animation:sheetUp 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  max-height:90dvh; overflow-y:auto;
+}
+@keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.modal-handle { width:40px; height:4px; background:var(--surface2); border-radius:2px; margin:0 auto 20px; }
+.modal-title { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:700; color:var(--gold); margin-bottom:16px; }
+
+/* ─── PAYMENT MODAL ─── */
+.coin-selector { display:flex; gap:8px; margin-bottom:20px; }
+.coin-btn {
+  flex:1; padding:12px; border:1px solid var(--border); border-radius:12px;
+  background:var(--surface); color:var(--text2); font-size:13px; font-weight:600;
+  cursor:pointer; transition:all 0.2s; text-align:center;
+}
+.coin-btn.active { border-color:var(--gold); background:rgba(212,175,55,0.1); color:var(--gold); }
+.amount-display {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:16px; margin-bottom:20px; text-align:center;
+}
+.amount-crypto { font-size:28px; font-weight:700; color:var(--gold); }
+.amount-fiat { font-size:13px; color:var(--text3); margin-top:4px; }
+.pay-btn {
+  width:100%; padding:16px; border:none; border-radius:14px;
+  background:linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color:#000; font-size:15px; font-weight:700; cursor:pointer; transition:all 0.2s;
+}
+.pay-btn:hover { transform:translateY(-2px); box-shadow:var(--shadow-gold); }
+
+/* ─── EMA CHAT MODAL ─── */
+.ema-modal { max-height:85dvh; }
+.ema-header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+.ema-avatar { width:44px; height:44px; background:linear-gradient(135deg, var(--gold-dark), var(--gold)); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; }
+.ema-info h3 { font-size:16px; font-weight:600; color:var(--gold); }
+.ema-info p { font-size:11px; color:var(--text3); }
+.ema-msgs { height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+.ema-msgs::-webkit-scrollbar { width:2px; }
+.ema-msg { max-width:85%; }
+.ema-msg.user { align-self:flex-end; }
+.ema-msg.ai { align-self:flex-start; }
+.ema-bubble { padding:10px 14px; border-radius:16px; font-size:13px; line-height:1.5; }
+.ema-msg.user .ema-bubble { background:var(--gold); color:#000; border-bottom-right-radius:4px; }
+.ema-msg.ai .ema-bubble { background:var(--surface2); color:var(--text); border-bottom-left-radius:4px; border:1px solid var(--border); }
+.ema-quick { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.ema-quick-btn { padding:6px 12px; background:var(--surface); border:1px solid var(--border); border-radius:20px; font-size:11px; color:var(--text2); cursor:pointer; transition:all 0.15s; }
+.ema-quick-btn:hover { border-color:var(--gold); color:var(--gold); }
+.ema-input-row { display:flex; gap:8px; }
+.ema-input { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:22px; padding:11px 16px; color:var(--text); font-size:13px; outline:none; }
+.ema-send { width:40px; height:40px; background:var(--gold); border:none; border-radius:50%; color:#000; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* ─── PRODUCT DETAIL MODAL ─── */
+.prod-detail-img { font-size:80px; text-align:center; padding:24px; background:var(--surface); border-radius:16px; margin-bottom:16px; }
+.prod-detail-name { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; margin-bottom:6px; }
+.prod-detail-desc { font-size:13px; color:var(--text2); line-height:1.6; margin-bottom:16px; }
+.prod-detail-prices { display:flex; justify-content:space-between; align-items:center; padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:20px; }
+.price-crypto { font-size:20px; font-weight:700; color:var(--gold); }
+.price-fiat { font-size:13px; color:var(--text3); }
+
+/* ─── STORE / SELLER SCREEN ─── */
+.store-header {
+  padding:24px 20px 16px; background:linear-gradient(135deg, var(--surface), var(--bg2));
+  border-bottom:1px solid var(--border); text-align:center;
+}
+.store-icon { font-size:52px; margin-bottom:10px; }
+.store-name { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:var(--gold); }
+.store-meta { font-size:12px; color:var(--text3); margin-top:4px; }
+.store-stats { display:flex; gap:1px; background:var(--border); margin-top:14px; border-radius:12px; overflow:hidden; }
+.store-stat { flex:1; background:var(--surface); padding:10px; text-align:center; }
+.store-stat-num { font-size:16px; font-weight:700; color:var(--gold); }
+.store-stat-label { font-size:10px; color:var(--text3); }
+
+/* ─── DELIVERY SCREEN ─── */
+.delivery-map {
+  margin:12px 16px; height:180px; background:linear-gradient(135deg, #0D1520 0%, #0A1018 100%);
+  border-radius:18px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden;
+}
+.map-placeholder { text-align:center; color:var(--text3); font-size:13px; }
+.map-placeholder span { font-size:36px; display:block; margin-bottom:6px; }
+.delivery-dot {
+  position:absolute; width:12px; height:12px; background:var(--gold); border-radius:50%;
+  border:2px solid #fff; animation:moveDot 4s linear infinite;
+  box-shadow:0 0 12px var(--gold);
+}
+@keyframes moveDot {
+  0%{left:20%;top:60%} 25%{left:40%;top:30%} 50%{left:70%;top:50%} 75%{left:50%;top:70%} 100%{left:20%;top:60%}
+}
+
+/* ─── SEARCH BAR ─── */
+.search-bar {
+  margin:8px 16px 4px; display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:11px 16px;
+}
+.search-icon { color:var(--text3); font-size:16px; }
+.search-input { flex:1; background:none; border:none; outline:none; color:var(--text); font-size:14px; font-family:'DM Sans',sans-serif; }
+.search-input::placeholder { color:var(--text3); }
+
+/* ─── LOADING STATE ─── */
+.loading-spinner {
+  width:32px; height:32px; border:3px solid var(--surface2); border-top-color:var(--gold);
+  border-radius:50%; animation:spin 0.7s linear infinite; margin:20px auto;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ─── SELLER DASHBOARD ─── */
+.dashboard-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:4px 16px 8px; }
+.dash-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; }
+.dash-card-icon { font-size:24px; margin-bottom:8px; }
+.dash-card-num { font-size:22px; font-weight:700; color:var(--gold); }
+.dash-card-label { font-size:11px; color:var(--text3); margin-top:2px; }
+
+/* ─── COIN CODE BADGE ─── */
+.coin-badge {
+  display:inline-flex; align-items:center; gap:4px; padding:3px 8px;
+  background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25);
+  border-radius:20px; font-size:11px; color:var(--gold); font-weight:600;
+}
+
+/* ─── ANIMATIONS ─── */
+.shimmer {
+  background:linear-gradient(90deg, var(--surface) 0%, var(--surface2) 50%, var(--surface) 100%);
+  background-size:200% 100%; animation:shimmer 1.5s infinite;
+}
+@keyframes shimmer { to{background-position:-200% 0} }
+
+/* UTILS */
+.flex { display:flex; }
+.flex-center { display:flex; align-items:center; justify-content:center; }
+.gap-8 { gap:8px; }
+.mt-8 { margin-top:8px; }
+.pb-8 { padding-bottom:8px; }
+.text-gold { color:var(--gold); }
+.text-sm { font-size:12px; }
+.text-xs { font-size:11px; color:var(--text3); }
+.fw-600 { font-weight:600; }
+.w-full { width:100%; }
+.hidden { display:none !important; }
+.divider { height:1px; background:var(--border); margin:8px 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ SCREENS ═══════════════════ -->
+
+<!-- SPLASH -->
+<div id="screen-splash" class="screen active">
+  <div class="splash-logo">
+    <div class="splash-crown">👑</div>
+    <div class="splash-title">PALACE</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold-dark);letter-spacing:6px;margin-top:-14px">MARKET</div>
+    <div class="splash-sub">Premium · Marketplace · Web3</div>
+    <div class="splash-loader"><div class="splash-loader-bar"></div></div>
+  </div>
+</div>
+
+<!-- AUTH -->
+<div id="screen-auth" class="screen">
+  <div class="auth-card">
+    <div class="auth-icon">🔐</div>
+    <div class="auth-title">Bienvenue</div>
+    <div class="auth-desc">
+      Connectez-vous avec votre identité Delta pour accéder à Palace Market.<br>
+      <span style="color:var(--gold);font-weight:600">Aucun mot de passe requis.</span>
+    </div>
+    <button class="btn-delta" onclick="authWithDelta()">
+      👑 &nbsp;Se connecter avec Delta
+    </button>
+    <div style="margin-top:16px;font-size:11px;color:var(--text3)">
+      Sécurisé par la blockchain · Identité décentralisée
+    </div>
+  </div>
+</div>
+
+<!-- screen-role supprimé : le rôle est mémorisé via localStorage et géré dans les Paramètres -->
+
+<!-- ═══════════════════ APP PRINCIPALE ═══════════════════ -->
+<!-- #app : affiché après login, masqué par showRoleSelection() si besoin -->
+<div id="app" style="display:none">
+
+<!-- HOME -->
+<div id="screen-home" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">👑 Palace</div>
+    <button class="topbar-icon-btn" onclick="showScreen('screen-cart')">
+      🛒 <span class="badge" id="cart-badge" style="display:none">0</span>
+    </button>
+    <button class="topbar-icon-btn" onclick="showScreen('screen-notifs')">
+      🔔 <span class="badge" id="notif-badge" style="display:none">0</span>
+    </button>
+  </div>
+  <div class="scroll-area">
+    <!-- Hero Balance -->
+    <div class="home-hero">
+      <div class="home-greeting">Bonjour 👋</div>
+      <div class="home-name" id="user-display-name">Chargement...</div>
+      <div class="home-balance-label">Solde Estimé</div>
+      <div class="home-balance" id="home-balance-display">— <span id="home-balance-coin">USDT</span></div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <span class="coin-badge">DTC</span>
+        <span class="coin-badge">USDT</span>
+        <span class="coin-badge">ICP</span>
+      </div>
+    </div>
+
+    <!-- Jackpot Banner -->
+    <div class="jackpot-banner" onclick="switchTab('jackpot')">
+      <div class="jackpot-inner">
+        <div class="jackpot-icon">🎰</div>
+        <div class="jackpot-info">
+          <div class="jackpot-label">⚡ Dimanche 20h GMT</div>
+          <div class="jackpot-title">Palace Jackpot</div>
+          <div class="jackpot-sub">Grand tirage hebdomadaire · 3 🎟 disponibles</div>
+        </div>
+        <div class="jackpot-timer">
+          <div class="jackpot-time" id="home-countdown">04j 12h</div>
+          <div class="jackpot-tickets">🎟 3 tickets</div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Categories -->
+    <div class="section-title">🗂 CATÉGORIES</div>
+    <div class="cats-scroll" id="home-cats">
+      <div class="cat-chip active" onclick="filterCat(this,'all')"><div class="cat-chip-icon">⭐</div><div class="cat-chip-label">Tout</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'food')"><div class="cat-chip-icon">🍽</div><div class="cat-chip-label">Food</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'fashion')"><div class="cat-chip-icon">👗</div><div class="cat-chip-label">Mode</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'tech')"><div class="cat-chip-icon">📱</div><div class="cat-chip-label">Tech</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'beauty')"><div class="cat-chip-icon">💄</div><div class="cat-chip-label">Beauté</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'home')"><div class="cat-chip-icon">🏠</div><div class="cat-chip-label">Maison</div></div>
+      <div class="cat-chip" onclick="filterCat(this,'sports')"><div class="cat-chip-icon">⚽</div><div class="cat-chip-label">Sport</div></div>
+    </div>
+
+    <!-- Restaurants -->
+    <div class="section-title" id="section-food-palace">🍽 FOOD PALACE</div>
+    <div class="rest-scroll" id="restaurants-list">
+      <div style="padding:20px; color:var(--text3); font-size:13px; text-align:center">⏳ Chargement des restaurants…</div>
+    </div>
+
+    <!-- Products -->
+    <div class="section-title" id="section-marketplace-produits">🛍 MARKETPLACES PRODUITS</div>
+    <div class="prod-grid" id="prod-grid">
+      <!-- filled by JS -->
+    </div>
+
+    <div style="height:16px"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('home')"><div class="nav-icon">🏠</div><div class="nav-label">Accueil</div></div>
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item" onclick="switchTab('chat')" style="position:relative">
+      <div class="nav-icon">💬</div>
+      <div class="nav-label">Messages</div>
+      <div id="notif-badge-nav" style="position:absolute; top:2px; right:12px; background:var(--red); color:#fff; font-size:10px; width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; font-weight:700">0</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div id="screen-search" class="screen">
+  <div class="topbar" style="background:var(--bg2);padding-bottom:14px">
+    <button class="topbar-icon-btn" onclick="switchTab('home')">‹</button>
+    <div style="flex:1;font-size:16px;font-weight:600">Explorer</div>
+  </div>
+  <div class="search-bar" style="margin-top:0">
+    <div class="search-icon">🔍</div>
+    <input class="search-input" placeholder="Chercher produits, restaurants, vendeurs..." oninput="handleSearch(this.value)"/>
+  </div>
+  <div class="scroll-area" style="padding:8px 0">
+    <div class="section-title">🔥 TENDANCES</div>
+    <div class="prod-grid" id="search-grid"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('home')" style="position:relative">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Accueil</div>
+      <div id="cart-badge-home" style="position:absolute; top:2px; right:12px; background:var(--gold); color:#000; font-size:10px; width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; font-weight:700">0</div>
+    </div>
+    <div class="nav-item active" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item" onclick="switchTab('chat')" style="position:relative">
+      <div class="nav-icon">💬</div>
+      <div class="nav-label">Messages</div>
+      <div id="notif-badge-nav" style="position:absolute; top:2px; right:12px; background:var(--red); color:#fff; font-size:10px; width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; font-weight:700">0</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- ORDERS -->
+<div id="screen-orders" class="screen">
+  <div class="topbar" style="background:var(--bg2);padding-bottom:14px">
+    <div class="topbar-logo" style="font-size:18px">📦 Commandes</div>
+  </div>
+  <div class="scroll-area">
+    <!-- Tracking commande en cours — rempli dynamiquement par renderOrders() -->
+    <div id="active-order-section" style="display:none">
+      <div class="section-title">📦 COMMANDE EN COURS</div>
+      <div id="active-order-track" style="margin: 0 16px 20px;"></div>
+    </div>
+    <div class="section-title">🗂 HISTORIQUE</div>
+    <div id="orders-list"></div>
+    <div id="orders-empty" style="display:none; text-align:center; padding:60px 20px; color:var(--text3)">
+      <div style="font-size:48px; margin-bottom:12px">📦</div>
+      <div style="font-size:16px; font-weight:600; margin-bottom:8px">Aucune commande</div>
+      <div style="font-size:13px">Vos commandes apparaîtront ici</div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('home')" style="position:relative">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Accueil</div>
+      <div id="cart-badge-home" style="position:absolute; top:2px; right:12px; background:var(--gold); color:#000; font-size:10px; width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; font-weight:700">0</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item active" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item" onclick="switchTab('chat')" style="position:relative">
+      <div class="nav-icon">💬</div>
+      <div class="nav-label">Messages</div>
+      <div id="notif-badge-nav" style="position:absolute; top:2px; right:12px; background:var(--red); color:#fff; font-size:10px; width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; font-weight:700">0</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- CHAT LIST -->
+<div id="screen-chat" class="screen">
+  <div class="topbar" style="background:var(--bg2);padding-bottom:14px">
+    <div class="topbar-logo" style="font-size:18px">💬 Messages</div>
+    <button class="topbar-icon-btn" onclick="openEma()">🤖</button>
+  </div>
+  <div class="chat-list scroll-area" id="chat-list">
+    <!-- filled by JS -->
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('home')" style="position:relative">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Accueil</div>
+      <div id="cart-badge-home" style="position:absolute; top:2px; right:12px; background:var(--gold); color:#000; font-size:10px; width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; font-weight:700">0</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item active" onclick="switchTab('chat')"><div class="nav-icon">💬</div><div class="nav-label">Messages</div></div>
+    <div class="nav-item" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- CHAT CONV -->
+<div id="screen-chat-conv" class="screen">
+  <div class="chat-header">
+    <div class="chat-back" onclick="switchTab('chat')">‹</div>
+    <div class="chat-avatar" id="conv-avatar">👤</div>
+    <div class="chat-contact">
+      <h3 id="conv-name">Contact</h3>
+      <p><span class="chat-online"></span><span id="conv-status">En ligne</span></p>
+    </div>
+    <button class="topbar-icon-btn" style="margin-left:auto" onclick="showToast('Appel en cours...','info')">📞</button>
+  </div>
+  <div class="chat-msgs scroll-area" id="chat-messages"></div>
+  <div id="reply-preview-bar" style="display:none; background:var(--surface2); padding:8px 16px; border-top:1px solid var(--border); flex-shrink:0; flex-direction:row; align-items:center; justify-content:space-between">
+    <div style="font-size:11px; color:var(--text3)">↩ Réponse à : <span id="reply-text" style="color:var(--text); font-weight:600"></span></div>
+    <button onclick="cancelReply()" style="background:none; border:none; color:var(--red); font-size:16px; cursor:pointer">✕</button>
+  </div>
+  <div class="chat-input-bar">
+    <button id="btn-voice" onclick="toggleVoiceRecord()" style="width:44px;height:44px;border-radius:50%;border:none;background:var(--surface2);color:var(--text2);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">🎤</button>
+    <input class="chat-input" type="text" id="chat-input-field" placeholder="Message..." onkeypress="if(event.key==='Enter')sendChatMsg()">
+    <button class="chat-send" onclick="sendChatMsg()">➤</button>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div id="screen-profile" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <div class="topbar-logo" style="font-size:18px">👤 Profil</div>
+    <button class="topbar-icon-btn" onclick="showScreen('screen-settings')">⚙️</button>
+  </div>
+  <div class="scroll-area">
+    <div class="profile-hero">
+      <div class="profile-avatar" id="profile-avatar">👤</div>
+      <div class="profile-name" id="profile-name">Chargement...</div>
+      <div class="profile-did" id="profile-did">did:delta:...</div>
+    </div>
+    <div class="profile-stats">
+      <div class="stat-item"><div class="stat-num">24</div><div class="stat-label">Commandes</div></div>
+      <div class="stat-item"><div class="stat-num">12</div><div class="stat-label">Tickets 🎟</div></div>
+      <div class="stat-item"><div class="stat-num">4.9</div><div class="stat-label">Note ★</div></div>
+    </div>
+    <div class="profile-menu">
+      <div class="profile-menu-item" onclick="openModal('modal-wallet')">
+        <div class="menu-icon">💰</div><div class="menu-label">Portefeuille Delta</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="switchTab('jackpot')">
+        <div class="menu-icon">🎰</div><div class="menu-label">Jackpot Palace</div><span class="menu-badge">3 🎟</span><div class="menu-arrow">›</div>
+      </div>
+      <!-- menu-seller-dashboard retiré du profil : accessible via Paramètres → Rôle Vendeur -->
+      <div class="profile-menu-item" onclick="showToast('Historique transactions','info')">
+        <div class="menu-icon">📋</div><div class="menu-label">Historique transactions</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="showAddresses()">
+        <div class="menu-icon">📍</div><div class="menu-label">Mes adresses</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="openEma()">
+        <div class="menu-icon">🤖</div><div class="menu-label">Ema – Assistante IA</div><div class="menu-arrow">›</div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('home')" style="position:relative">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Accueil</div>
+      <div id="cart-badge-home" style="position:absolute; top:2px; right:12px; background:var(--gold); color:#000; font-size:10px; width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; font-weight:700">0</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item" onclick="switchTab('chat')" style="position:relative">
+      <div class="nav-icon">💬</div>
+      <div class="nav-label">Messages</div>
+      <div id="notif-badge-nav" style="position:absolute; top:2px; right:12px; background:var(--red); color:#fff; font-size:10px; width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; font-weight:700">0</div>
+    </div>
+    <div class="nav-item active" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="screen-settings" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <button class="topbar-icon-btn" onclick="switchTab('profile')">‹</button>
+    <div class="topbar-logo" style="font-size:18px">⚙️ Paramètres</div>
+  </div>
+  <div class="scroll-area" style="padding:20px">
+    <div class="section-title">RÔLE ACTUEL</div>
+    <div class="profile-role-btns" style="margin-bottom:30px">
+      <button class="role-btn" onclick="switchRole(this,'buyer')">🛒 Acheteur</button>
+      <button class="role-btn" onclick="switchRole(this,'seller')">🏪 Vendeur</button>
+      <button class="role-btn" onclick="switchRole(this,'delivery')">🛵 Livreur</button>
+    </div>
+
+    <div class="section-title">PRÉFÉRENCES</div>
+    <div class="profile-menu">
+      <div class="profile-menu-item" onclick="changeLanguage()">
+        <div class="menu-icon">🌍</div><div class="menu-label">Langue</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="showAddresses()">
+        <div class="menu-icon">📍</div><div class="menu-label">Modifier mes adresses</div><div class="menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="logout()" style="border-top:1px solid var(--border);margin-top:20px;color:var(--red)">
+        <div class="menu-icon">🚪</div><div class="menu-label">Déconnexion</div><div class="menu-arrow">›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADDRESSES -->
+<div id="screen-addresses" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <button class="topbar-icon-btn" onclick="switchTab('profile')">‹</button>
+    <div class="topbar-logo" style="font-size:18px">📍 Mes Adresses</div>
+  </div>
+  <div class="scroll-area" style="padding:20px">
+    <div id="address-list"></div>
+    <button class="btn-delta" style="margin-top:20px" onclick="addAddress()">➕ Ajouter une adresse</button>
+  </div>
+</div>
+
+<!-- WALLET MODAL -->
+<div class="modal-overlay" id="modal-wallet">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h2 style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--gold)">Portefeuille Delta</h2>
+    </div>
+    <div class="scroll-area" style="max-height:60vh; padding:10px">
+      <div style="background:var(--surface2); padding:20px; border-radius:18px; text-align:center; margin-bottom:20px">
+        <div style="font-size:12px; color:var(--text3); margin-bottom:5px">Solde Total</div>
+        <div style="font-size:32px; font-weight:700; color:var(--gold)" id="wallet-balance">— DTC</div>
+        <div style="font-size:14px; color:var(--text3)">≈ 159,770 FCFA</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+        <button class="btn-delta" style="background:var(--surface2); color:var(--text)" onclick="openWalletDeposit()">📥 Dépôt</button>
+        <button class="btn-delta" style="background:var(--surface2); color:var(--text)" onclick="showToast('Retrait Delta...','info')">📤 Retrait</button>
+      </div>
+      <div class="section-title" style="padding:20px 0 10px">ACTIFS</div>
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="display:flex; justify-content:space-between; padding:12px; background:var(--surface); border-radius:12px">
+          <div style="display:flex; gap:10px"><span>💰</span> <strong>DTC</strong></div>
+          <div>245.80</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:12px; background:var(--surface); border-radius:12px">
+          <div style="display:flex; gap:10px"><span>💵</span> <strong>USDT</strong></div>
+          <div>12.50</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:12px; background:var(--surface); border-radius:12px">
+          <div style="display:flex; gap:10px"><span>💎</span> <strong>ICP</strong></div>
+          <div>0.45</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-delta" style="margin-top:20px" onclick="closeModal('modal-wallet')">Fermer</button>
+  </div>
+</div>
+
+<!-- JACKPOT -->
+<div id="screen-jackpot" class="screen">
+  <div class="topbar" style="background:transparent">
+    <button class="topbar-icon-btn" onclick="switchTab('home')">‹</button>
+    <div style="flex:1;text-align:center;font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--gold)">Palace Jackpot</div>
+    <div style="width:40px"></div>
+  </div>
+  <div class="scroll-area">
+    <div class="jp-hero">
+      <span class="jp-trophy">🏆</span>
+      <div class="jp-title">Jackpot du Dimanche</div>
+      <div class="jp-sub">Chaque dimanche à 20h00 GMT · Paiement en DTC</div>
+      <div style="font-size:28px;font-weight:700;color:var(--red-light);margin:10px 0;font-family:'Cormorant Garamond',serif">
+        Prize Pool: 500 USDT
+      </div>
+      <div class="jp-countdown">
+        <div class="jp-count-item"><div class="jp-count-num" id="jp-days">04</div><div class="jp-count-label">Jours</div></div>
+        <div class="jp-sep">:</div>
+        <div class="jp-count-item"><div class="jp-count-num" id="jp-hours">12</div><div class="jp-count-label">Heures</div></div>
+        <div class="jp-sep">:</div>
+        <div class="jp-count-item"><div class="jp-count-num" id="jp-mins">45</div><div class="jp-count-label">Min</div></div>
+        <div class="jp-sep">:</div>
+        <div class="jp-count-item"><div class="jp-count-num" id="jp-secs">30</div><div class="jp-count-label">Sec</div></div>
+      </div>
+    </div>
+
+    <div class="jp-tickets">
+      <div class="jp-tickets-header">
+        <div class="jp-tickets-title">🎟 Mes Tickets</div>
+        <div class="jp-ticket-count" id="ticket-count">3 tickets</div>
+      </div>
+      <button class="jp-ad-btn" onclick="watchAd()">
+        📺 &nbsp;Voir une pub → +1 Ticket + 0.01 USDT en DTC
+      </button>
+      <div class="jp-ad-info">Regardez des publicités pour gagner des tickets et du DTC · Sans limite quotidienne</div>
+    </div>
+
+    <button class="jp-participate" onclick="participateJackpot()">
+      🎰 &nbsp;Participer au tirage avec mes tickets
+    </button>
+
+    <div class="jp-prev-winners" style="margin-top:16px">
+      <div class="section-title" style="padding:0 0 12px">🏅 DERNIERS GAGNANTS</div>
+      <div id="jackpot-winners-list">
+        <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Chargement…</div>
+      </div>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('home')" style="position:relative">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Accueil</div>
+      <div id="cart-badge-home" style="position:absolute; top:2px; right:12px; background:var(--gold); color:#000; font-size:10px; width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; font-weight:700">0</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Explorer</div></div>
+    <div class="nav-item" onclick="switchTab('orders')"><div class="nav-icon">📦</div><div class="nav-label">Commandes</div></div>
+    <div class="nav-item" onclick="switchTab('chat')" style="position:relative">
+      <div class="nav-icon">💬</div>
+      <div class="nav-label">Messages</div>
+      <div id="notif-badge-nav" style="position:absolute; top:2px; right:12px; background:var(--red); color:#fff; font-size:10px; width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; font-weight:700">0</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('profile')"><div class="nav-icon">👤</div><div class="nav-label">Profil</div></div>
+  </div>
+</div>
+
+<!-- CART -->
+<div id="screen-cart" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <button class="topbar-icon-btn" onclick="switchTab('home')">‹</button>
+    <div style="flex:1;font-size:16px;font-weight:600">🛒 Mon Panier</div>
+    <button class="topbar-icon-btn" onclick="clearCart()" style="color:var(--red-light)">🗑</button>
+  </div>
+  <div class="scroll-area" id="cart-items">
+    <!-- filled by JS -->
+  </div>
+  <div class="cart-summary">
+    <div class="summary-row"><span>Sous-total</span><span id="subtotal">0 DTC</span></div>
+    <div class="summary-row"><span>Frais de service (4%)</span><span id="service-fee">0 DTC</span></div>
+    <div class="summary-row" id="cart-delivery-row" style="display:none"><span>Livraison</span><span id="cart-delivery-fee">0 DTC</span></div>
+    <div class="summary-row total"><span>Total</span><span class="price" id="total-price">0 DTC</span></div>
+  </div>
+  <div id="wait-for-fees" style="text-align:center; padding:10px; color:var(--text2); font-size:13px; display:none">
+    ⏳ En attente de la fixation des frais par le vendeur...
+  </div>
+  <button id="cart-pay-btn" class="checkout-btn" onclick="requestDeliveryFees()">🚀 Demander les frais & Commander</button>
+</div>
+
+<!-- SELLER SETUP -->
+<div id="screen-seller-setup" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <button class="topbar-icon-btn" onclick="switchTab('profile')">‹</button>
+    <div style="flex:1;font-size:16px;font-weight:600">Configuration Vendeur</div>
+  </div>
+  <div class="scroll-area" style="padding:20px">
+    <div class="section-title">CHOISISSEZ VOTRE ACTIVITÉ</div>
+    <div style="display:flex; gap:15px; margin-bottom:30px">
+      <div class="role-card" style="flex:1; flex-direction:column; padding:20px; text-align:center" onclick="setupSeller('restaurant')">
+        <div class="role-icon" style="margin:0 auto 10px">🍽</div>
+        <div class="role-info"><h3>Restaurant</h3><p>Food Palace</p></div>
+      </div>
+      <div class="role-card" style="flex:1; flex-direction:column; padding:20px; text-align:center" onclick="setupSeller('boutique')">
+        <div class="role-icon" style="margin:0 auto 10px">🛍</div>
+        <div class="role-info"><h3>Boutique</h3><p>Marketplace</p></div>
+      </div>
+    </div>
+    
+    <div id="seller-form" style="display:none">
+      <div class="section-title" id="seller-form-title">DÉTAILS DE L'ÉTABLISSEMENT</div>
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <input id="seller-name" class="search-input" style="margin:0" placeholder="Nom de l'établissement">
+        <textarea id="seller-desc" class="search-input" style="margin:0; height:80px; padding:12px" placeholder="Description..."></textarea>
+        <input id="seller-loc" class="search-input" style="margin:0" placeholder="Localisation géographique">
+        <input id="seller-gps" class="search-input" style="margin:0" placeholder="Coordonnées GPS (ex: 5.34, -4.02)">
+        <input id="seller-specialty" class="search-input" style="margin:0" placeholder="Spécialité (ex: Italienne, Mode)">
+        <input id="seller-wallet" class="search-input" style="margin:0" placeholder="Adresse de réception paiement">
+        <div style="font-size:12px; color:var(--text3); margin-bottom:4px">Logo / Photo de l'établissement :</div>
+        <input type="file" id="seller-logo-file" accept="image/*" class="search-input" style="margin:0; font-size:12px" onchange="previewSellerLogo(this)">
+        <div id="seller-logo-preview" style="display:none; margin-top:8px; text-align:center">
+          <img id="seller-logo-img" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--gold)" src="" alt="Logo">
+        </div>
+        <button class="btn-delta" onclick="saveSellerConfig()">Ouvrir mon établissement 🚀</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SELLER DASHBOARD -->
+<div id="screen-seller" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <button class="topbar-icon-btn" onclick="switchTab('profile')">‹</button>
+    <div id="seller-dash-title" style="flex:1;font-size:16px;font-weight:600">📊 Tableau de bord</div>
+    <button class="topbar-icon-btn" onclick="showAddProduct()">➕</button>
+  </div>
+  <div class="scroll-area">
+    <div class="store-header">
+      <!-- Logo vendeur : emoji fallback ou vraie photo -->
+      <div id="seller-dash-icon" class="store-icon" style="overflow:hidden; border-radius:50%; width:72px; height:72px; display:flex; align-items:center; justify-content:center; background:var(--surface2); font-size:36px; margin:0 auto 12px">🏪</div>
+      <div class="store-name" id="seller-dash-name">Mon Établissement</div>
+      <div id="seller-dash-status" style="margin-bottom:10px">
+        <button class="cat-chip active" id="btn-toggle-store" onclick="toggleStoreStatus()">🟢 Ouvert</button>
+      </div>
+      <div class="store-stats">
+        <div class="store-stat"><div class="store-stat-num" id="stat-revenues">0</div><div class="store-stat-label">DTC Revenus</div></div>
+        <div class="store-stat"><div class="store-stat-num" id="stat-orders">0</div><div class="store-stat-label">Commandes</div></div>
+        <div class="store-stat"><div class="store-stat-num">4.8★</div><div class="store-stat-label">Note</div></div>
+      </div>
+    </div>
+
+    <div class="section-title">📋 GESTION DES COMMANDES</div>
+    <div class="cats-scroll order-tabs" style="margin-bottom:10px">
+      <div class="cat-chip tab active" onclick="updateOrderTab(this, 'new')">Nouvelles</div>
+      <div class="cat-chip tab" onclick="updateOrderTab(this, 'prep')">Préparation</div>
+      <div class="cat-chip tab" onclick="updateOrderTab(this, 'ready')">Prêt / Livraison</div>
+    </div>
+    <div id="seller-orders-list" style="padding:0 16px"></div>
+
+    <div class="section-title" id="seller-items-title">📦 GESTION DES ARTICLES</div>
+    <div class="search-bar" style="margin:10px 16px">
+      <div class="search-icon">🔍</div>
+      <input class="search-input" placeholder="Rechercher un article..." oninput="searchSellerItems(this.value)">
+    </div>
+    <div class="dashboard-cards" style="margin-bottom:10px">
+      <div class="dash-card"><div class="dash-card-num" id="total-items">0</div><div class="dash-card-label">Total</div></div>
+      <div class="dash-card"><div class="dash-card-num" id="avail-items">0</div><div class="dash-card-label">Disponibles</div></div>
+      <div class="dash-card" style="color:var(--red)"><div class="dash-card-num" id="out-items">0</div><div class="dash-card-label">Rupture</div></div>
+    </div>
+    <div id="seller-items-grid" class="prod-grid"></div>
+    <div style="height:80px"></div>
+  </div>
+</div>
+
+<!-- ADD PRODUCT MODAL -->
+<div class="modal-overlay" id="modal-add-product">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h2 id="add-item-title">Ajouter un article</h2>
+    </div>
+    <div class="scroll-area" style="max-height:70vh; padding:10px">
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <input id="new-item-name" class="search-input" placeholder="Nom de l'article">
+        <select id="new-item-cat" class="search-input" style="height:45px">
+          <!-- Dynamique -->
+        </select>
+        <div id="boutique-only" style="display:none">
+          <select id="new-item-state" class="search-input" style="height:45px">
+            <option value="new">Neuf</option>
+            <option value="used">Occasion</option>
+          </select>
+        </div>
+        <textarea id="new-item-desc" class="search-input" style="height:80px; padding:12px" placeholder="Description..."></textarea>
+        <div style="display:flex; gap:10px; align-items:center">
+          <!-- ID corrigé : new-item-price-local → new-item-price pour correspondre à saveNewItem() -->
+          <input id="new-item-price" type="number" class="search-input" placeholder="Prix (Monnaie locale)" oninput="convertPrice(this.value)">
+          <div style="font-weight:600; color:var(--gold); white-space:nowrap" id="converted-price">0 DTC</div>
+        </div>
+        <div id="restaurant-only" style="display:none">
+          <div style="font-size:12px; color:var(--text3); margin-bottom:5px">Allergènes :</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:11px">
+            <label><input type="checkbox" value="Gluten"> Gluten</label>
+            <label><input type="checkbox" value="Lactose"> Lactose</label>
+            <label><input type="checkbox" value="Oeufs"> Oeufs</label>
+            <label><input type="checkbox" value="Arachides"> Arachides</label>
+            <label><input type="checkbox" value="Soja"> Soja</label>
+            <label><input type="checkbox" value="Poisson"> Poisson</label>
+          </div>
+        </div>
+        <div style="font-size:12px; color:var(--text3)">Photos du produit/plat (5 max) :</div>
+        <input type="file" id="new-item-images" multiple accept="image/*" class="search-input" style="font-size:11px" onchange="previewItemImages(this)">
+        <div id="item-images-preview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px"></div>
+        <div style="display:flex; gap:10px; margin-top:10px">
+          <button class="btn-delta" style="flex:1" onclick="saveNewItem()">Ajouter</button>
+          <button class="btn-delta" style="flex:1; background:var(--surface2); color:var(--text)" onclick="closeModal('modal-add-product')">Annuler</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DELIVERY DASHBOARD -->
+<div id="screen-delivery" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <button class="topbar-icon-btn" onclick="switchTab('profile')">‹</button>
+    <div style="flex:1;font-size:16px;font-weight:600">🛵 Livreur</div>
+  </div>
+  <div class="scroll-area">
+    <div class="section-title">DEMANDES DE LIVRAISON</div>
+    <div id="delivery-requests" style="padding:0 16px"></div>
+    
+    <div id="active-delivery" style="display:none; padding:20px; background:var(--surface); border-top:1px solid var(--border); margin-top:20px">
+      <div class="section-title" style="padding:0; margin-bottom:15px">LIVRAISON EN COURS</div>
+      <div id="delivery-details" style="font-size:13px; color:var(--text2); line-height:1.6"></div>
+      <button class="btn-delta" style="margin-top:15px" onclick="toggleGPS()">📍 Activer traçabilité GPS</button>
+      <button class="btn-delta" style="margin-top:10px" onclick="confirmDeliveryWithCode()">✅ Confirmer avec code client</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFS -->
+<div id="screen-notifs" class="screen">
+  <div class="topbar" style="background:var(--bg2)">
+    <button class="topbar-icon-btn" onclick="switchTab('home')">‹</button>
+    <div style="flex:1;font-size:16px;font-weight:600">🔔 Notifications</div>
+  </div>
+  <div class="scroll-area" id="notifs-list"></div>
+</div>
+
+<!-- ═══════════════════ EMA FAB ═══════════════════ -->
+<button class="ema-fab hidden" id="ema-fab" onclick="openEma()">🤖</button>
+
+<!-- ═══════════════════ TOAST ═══════════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════ MODALS ═══════════════════ -->
+
+<!-- Payment Modal -->
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💳 Paiement Delta</div>
+    <div class="coin-selector">
+      <button class="coin-btn active" onclick="selectCoin(this,'USDT')">💵 USDT</button>
+      <button class="coin-btn" onclick="selectCoin(this,'DTC')">🪙 DTC</button>
+      <button class="coin-btn" onclick="selectCoin(this,'ICP')">⚡ ICP</button>
+    </div>
+    <div class="amount-display">
+      <div class="amount-crypto" id="pay-amount">12.5 USDT</div>
+      <div class="amount-fiat" id="pay-fiat">≈ 8,125 FCFA</div>
+    </div>
+    <div class="section-title" style="padding:0; margin-bottom:10px">MODE DE RÉCEPTION</div>
+    <div style="display:flex; gap:10px; margin-bottom:15px">
+      <button id="btn-delivery" class="cat-chip active" style="flex:1; flex-direction:row" onclick="setReceptionMode('delivery')">🛵 Livraison</button>
+      <button id="btn-pickup" class="cat-chip" style="flex:1; flex-direction:row" onclick="setReceptionMode('pickup')">🏬 Retrait</button>
+    </div>
+
+    <div id="delivery-address-section">
+      <div class="section-title" style="padding:0; margin-bottom:10px">ADRESSE DE RÉCEPTION</div>
+      <select id="select-delivery-address" style="width:100%; background:var(--surface); border:1px solid var(--border); color:var(--text); padding:12px; border-radius:12px; margin-bottom:15px">
+        <!-- filled by JS -->
+      </select>
+    </div>
+
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px;padding:10px;background:var(--surface);border-radius:10px;border:1px solid var(--border)">
+      🔒 Paiement sécurisé via escrow · Le vendeur reçoit après confirmation de livraison
+    </div>
+    <button class="pay-btn" onclick="executePayment()">✅ &nbsp;Confirmer le paiement</button>
+    <button onclick="closeModal('modal-payment')" style="width:100%;margin-top:10px;padding:12px;border:none;background:none;color:var(--text3);font-size:14px;cursor:pointer">Annuler</button>
+  </div>
+</div>
+
+<!-- Product Detail Modal -->
+<div class="modal-overlay" id="modal-product">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="prod-detail-img" id="modal-prod-img">📱</div>
+    <div class="prod-detail-name" id="modal-prod-name">Produit</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <span style="color:var(--gold)">★★★★★</span>
+      <span style="font-size:12px;color:var(--text3)">4.8 (124 avis)</span>
+    </div>
+    <div class="prod-detail-desc" id="modal-prod-desc">Description du produit</div>
+    <div class="prod-detail-prices">
+      <div><div class="price-crypto" id="modal-prod-price">2.5 DTC</div><div class="price-fiat" id="modal-prod-fcfa">≈ 1,625 FCFA</div></div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--text3)">Vendeur</div>
+        <div style="font-size:13px;font-weight:600;color:var(--gold)" id="modal-prod-store">Palace Shop</div>
+        <div style="font-size:10px;color:var(--text3)" id="modal-prod-location">📍 Lieu</div>
+      </div>
+    </div>
+    
+    <div id="offer-section" style="margin-bottom:15px; display:none">
+      <div style="font-size:12px; color:var(--text2); margin-bottom:5px">Faire une contre-offre :</div>
+      <div style="display:flex; gap:8px">
+        <input type="number" id="counter-offer-price" placeholder="Prix en DTC" style="flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px; color:var(--text); font-size:14px">
+        <button onclick="sendCounterOffer()" style="padding:10px 15px; background:var(--gold); border:none; border-radius:10px; color:#000; font-weight:600; cursor:pointer">Envoyer</button>
+      </div>
+    </div>
+
+    <button class="pay-btn" onclick="addToCart(currentProduct); closeModal('modal-product')">
+      🛒 &nbsp;Ajouter au panier
+    </button>
+    <button onclick="openPayment();closeModal('modal-product')" style="width:100%;margin-top:10px;padding:14px;border:1px solid var(--gold);background:none;color:var(--gold);border-radius:14px;font-size:14px;font-weight:600;cursor:pointer">
+      ⚡ Commander maintenant
+    </button>
+    <button onclick="closeModal('modal-product')" style="width:100%;margin-top:8px;padding:12px;border:none;background:none;color:var(--text3);font-size:14px;cursor:pointer">Fermer</button>
+  </div>
+</div>
+
+<!-- Restaurant Modal -->
+<div class="modal-overlay" id="modal-restaurant">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="modal-rest-header"></div>
+    <div id="modal-rest-menu"></div>
+    <button onclick="closeModal('modal-restaurant')" style="width:100%;margin-top:10px;padding:12px;border:none;background:none;color:var(--text3);font-size:14px;cursor:pointer">Fermer</button>
+  </div>
+</div>
+
+<!-- EMA Modal -->
+<div class="modal-overlay" id="modal-ema">
+  <div class="modal-sheet ema-modal">
+    <div class="modal-handle"></div>
+    <div class="ema-header">
+      <div class="ema-avatar">🤖</div>
+      <div class="ema-info">
+        <h3>Ema</h3>
+        <p>Votre assistante Palace Market · Toujours disponible</p>
+      </div>
+    </div>
+    <div class="ema-msgs" id="ema-msgs">
+      <div class="ema-msg ai"><div class="ema-bubble">Bonjour ! Je suis Ema, votre assistante Palace Market. Comment puis-je vous aider aujourd'hui ? 😊</div></div>
+    </div>
+    <div class="ema-quick" id="ema-quick">
+      <button class="ema-quick-btn" onclick="emaQuick('Mes commandes')">📦 Mes commandes</button>
+      <button class="ema-quick-btn" onclick="emaQuick('Jackpot info')">🎰 Jackpot</button>
+      <button class="ema-quick-btn" onclick="emaQuick('Comment payer ?')">💳 Paiement</button>
+      <button class="ema-quick-btn" onclick="emaQuick('Contacter livreur')">🛵 Livreur</button>
+    </div>
+    <div class="ema-input-row">
+      <input class="ema-input" id="ema-input" placeholder="Message à Ema..." onkeypress="if(event.key==='Enter')sendEmaMsg()"/>
+      <button class="ema-send" onclick="sendEmaMsg()">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delivery Code Modal -->
+<div class="modal-overlay" id="modal-code">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔑 Code de Livraison</div>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:48px;font-weight:900;letter-spacing:12px;color:var(--gold);font-family:'Cormorant Garamond',serif" id="delivery-code">A7B2</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:8px">Partagez ce code avec votre livreur à l'arrivée</div>
+    </div>
+    <div style="background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:16px">
+      ✅ Le paiement sera libéré au vendeur dès que le livreur aura saisi ce code.
+    </div>
+    <button class="pay-btn" onclick="closeModal('modal-code')">✓ &nbsp;Compris</button>
+  </div>
+</div>
+
+</div><!-- /#app -->
+
+<!-- ═══════════════════ SCRIPT ═══════════════════ -->
+<script>
+// ═══════════════════════════════════════════════════
+// ⚙️ CONFIGURATION — Palace Market
+// ═══════════════════════════════════════════════════
+
+const CONFIG = {
+  // Delta
+  DELTA_APP_ID: 29,
+  DELTA_APP_ID_STR: '29',
+
+  // Supabase — clé anon JWT (pour DB REST + SDK + Edge Functions)
+  SUPABASE_URL: 'https://onnzwrglpfkezuzimlba.supabase.co',
+  SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ubnp3cmdscGZrZXp1emltbGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMjgxMDAsImV4cCI6MjA5MzkwNDEwMH0.CANE5w3qyAlc-31Wf_B2OiOrWMV2ZHVTh_N6O3-fpPM',
+
+  // Escrow wallet Palace (adresse de dépôt temporaire)
+  ESCROW_ADDRESS: 'palace-escrow-29',
+
+  // Taux de conversion (à mettre à jour dynamiquement)
+  DTC_TO_FCFA: 650,
+  USDT_TO_FCFA: 650,
+};
+
+// ─── SUPABASE CLIENT ───────────────────────────────
+// Appels directs à l'API REST Supabase (sans SDK, compatible mini-app)
+// ─── SUPABASE CLIENT ───────────────────────────────
+const DB = {
+  // ── Headers de base (clé anon) ─────────────────────────────────────────────
+  // Après auth Delta → Supabase, DB.setAuthToken() remplace Bearer par le JWT
+  // de l'utilisateur connecté, ce qui active correctement les politiques RLS.
+  _authToken: CONFIG.SUPABASE_KEY,   // remplacé après login
+
+  get h() {
+    return {
+      'apikey':        CONFIG.SUPABASE_KEY,
+      'Authorization': `Bearer ${this._authToken}`,
+      'Content-Type':  'application/json',
+      'Prefer':        'return=representation',
+    };
+  },
+
+  // Appeler après avoir obtenu le JWT Supabase de l'utilisateur
+  setAuthToken(token) {
+    this._authToken = token || CONFIG.SUPABASE_KEY;
+  },
+
+  async get(table, params = '') {
+    try {
+      const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/${table}${params}`, { headers: this.h });
+      if (!res.ok) { console.warn('[DB.get]', table, res.status, await res.text()); return null; }
+      return await res.json();
+    } catch(e) { console.error('[DB.get]', table, e); return null; }
+  },
+
+  async post(table, body) {
+    try {
+      const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/${table}`, {
+        method: 'POST', headers: this.h, body: JSON.stringify(body)
+      });
+      if (!res.ok) { console.warn('[DB.post]', table, res.status, await res.text()); return null; }
+      return await res.json();
+    } catch(e) { console.error('[DB.post]', table, e); return null; }
+  },
+
+  // UPSERT: insère ou met à jour si le DID existe déjà
+  async upsert(table, body, conflictCol = 'did') {
+    try {
+      const headers = { ...this.h, 'Prefer': 'return=representation,resolution=merge-duplicates' };
+      const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/${table}?on_conflict=${conflictCol}`, {
+        method: 'POST', headers, body: JSON.stringify(body)
+      });
+      if (!res.ok) { console.warn('[DB.upsert]', table, res.status, await res.text()); return null; }
+      const data = await res.json();
+      return Array.isArray(data) ? data[0] : data;
+    } catch(e) { console.error('[DB.upsert]', table, e); return null; }
+  },
+
+  async patch(table, params, body) {
+    try {
+      const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/${table}${params}`, {
+        method: 'PATCH', headers: this.h, body: JSON.stringify(body)
+      });
+      if (!res.ok) { console.warn('[DB.patch]', table, res.status, await res.text()); return null; }
+      return await res.json();
+    } catch(e) { console.error('[DB.patch]', table, e); return null; }
+  },
+};
+
+// ─── PALACE DB HELPERS ─────────────────────────────
+const PalaceDB = {
+
+  // ── UTILISATEUR ──
+  // Récupère l'utilisateur existant OU le crée s'il n'existe pas encore.
+  // Utilise le DID comme clé unique. Ne recrée JAMAIS un doublon.
+  async getOrCreateUser(did, nickname) {
+    // 1. Chercher dans Supabase par DID
+    const existing = await DB.get('users', '?did=eq.' + encodeURIComponent(did) + '&limit=1');
+    if (existing && existing.length > 0) {
+      console.log('[Auth] Utilisateur existant récupéré:', existing[0].nickname);
+      return existing[0];
+    }
+    // 2. Créer si nouveau
+    console.log('[Auth] Nouvel utilisateur créé:', nickname);
+    const saved_role = localStorage.getItem('palace_user_role') || 'buyer';
+    const newUser = await DB.post('users', {
+      did,
+      nickname: nickname || 'Palace User',
+      role: saved_role,
+      tickets: 0,
+      dtc_balance: 0,
+    });
+    if (newUser && Array.isArray(newUser)) return newUser[0];
+    return newUser;
+  },
+
+  // Sauvegarder le rôle dans Supabase
+  async saveRole(did, role) {
+    return await DB.patch('users', '?did=eq.' + encodeURIComponent(did), { role });
+  },
+
+  // ⚠️ SÉCURITÉ — saveTickets désactivé côté client.
+  // La modification des soldes (tickets, dtc_balance) doit passer par
+  // une Edge Function Supabase ou un backend pour éviter la falsification.
+  // À implémenter : POST /functions/v1/reward-tickets { did, reason }
+  async saveTickets(did, tickets, dtc_balance) {
+    console.warn('[PalaceDB.saveTickets] Modification de solde désactivée côté client pour des raisons de sécurité.');
+    return null;
+  },
+
+  // ── COMMANDES ──
+  async createOrder(orderData) {
+    return await DB.post('orders', orderData);
+  },
+
+  async getBuyerOrders(did) {
+    return await DB.get('orders', '?buyer_did=eq.' + encodeURIComponent(did) + '&order=created_at.desc') || [];
+  },
+
+  // ── PAIEMENTS ──
+  async createPayment(paymentData) {
+    return await DB.post('payments', paymentData);
+  },
+
+  // ── MESSAGES ──
+  async sendMessage(senderDid, receiverDid, content, orderId = null) {
+    return await DB.post('messages', { sender_did: senderDid, receiver_did: receiverDid, content, order_id: orderId });
+  },
+
+  // ── PUBLICITÉS / JACKPOT ──
+  async recordAdView(userDid) {
+    // 1. Enregistrer la vue
+    await DB.post('ad_views', {
+      user_did: userDid,
+      reward_dtc: 0.01,
+      reward_ticket: 1,
+      ad_key: 'PALACE_REWARDED_' + CONFIG.DELTA_APP_ID,
+    });
+    // 2. Mettre à jour les tickets et DTC dans Supabase
+    const newTickets = (App.tickets || 0) + 1;
+    const newDtc = parseFloat(((App.user?.dtc_balance || 0) + 0.01).toFixed(4));
+    await PalaceDB.saveTickets(userDid, newTickets, newDtc);
+    return { tickets: newTickets, dtc_balance: newDtc };
+  },
+};
+
+// ═══════════════════════════════════════════════════
+// ─── STATE ───
+const App = {
+  user: null,
+  role: 'buyer',
+  cart: [],
+  tickets: 3,
+  currentCoin: 'USDT',
+  chatContact: null,
+  language: 'fr',
+  addresses: [], // chargées depuis Supabase après login via loadUserAddresses()
+};
+
+// ─── CURRENT_USER : objet global partagé avec le nouveau flow d'auth ──────────
+const CURRENT_USER = {
+  did:  localStorage.getItem('did')  || null,
+  role: localStorage.getItem('palace_user_role') || null,
+};
+
+// ─── DONNÉES DYNAMIQUES (chargées depuis Supabase) ───────────────────────────
+// Ces tableaux sont remplis au chargement via loadLiveData()
+let PRODUCTS = [];
+let CHAT_CONTACTS = [];
+let ORDERS = [];
+
+// ─── SUPABASE SDK CLIENT (en plus du client REST DB déjà présent) ─────────────
+const SUPABASE_URL = "https://onnzwrglpfkezuzimlba.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ubnp3cmdscGZrZXp1emltbGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMjgxMDAsImV4cCI6MjA5MzkwNDEwMH0.CANE5w3qyAlc-31Wf_B2OiOrWMV2ZHVTh_N6O3-fpPM";
+// Le client window.supabase est initialisé après le chargement du SDK (voir </body>)
+
+// ─── TEST DE CONNEXION SUPABASE ───────────────────────────────────────────────
+async function testSupabase() {
+  const { data, error } = await window._supabase.from("products").select("*");
+  console.log('[testSupabase] data:', data);
+  console.log('[testSupabase] error:', error);
+}
+
+// ─── CHARGEMENT DES DONNÉES RÉELLES ──────────────────────────────────────────
+// NOTE : les produits sont chargés par loadProducts() — cette fonction gère
+//        uniquement les messages et les commandes acheteur.
+async function loadLiveData() {
+  try {
+    if (App.user?.did) {
+      const msgs = await DB.get(
+        'messages',
+        '?or=(sender_did.eq.' + encodeURIComponent(App.user.did) +
+        ',receiver_did.eq.' + encodeURIComponent(App.user.did) + ')' +
+        '&order=created_at.desc&limit=200'
+      );
+      if (msgs && msgs.length > 0) {
+        // Grouper par interlocuteur
+        const convMap = {};
+        msgs.forEach(m => {
+          const other = m.sender_did === App.user.did ? m.receiver_did : m.sender_did;
+          if (!convMap[other]) {
+            convMap[other] = {
+              id:     other,
+              name:   m.sender_nickname || m.receiver_nickname || other.slice(-8),
+              emoji:  m.type === 'delivery' ? '🛵' : '🏪',
+              msg:    m.content || '',
+              time:   m.created_at ? new Date(m.created_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '',
+              online: false,
+              type:   m.type || 'seller',
+            };
+          }
+        });
+        CHAT_CONTACTS = Object.values(convMap);
+      } else {
+        CHAT_CONTACTS = [];
+      }
+
+      // 3. Commandes de l'acheteur connecté
+      const dbOrders = await PalaceDB.getBuyerOrders(App.user.did);
+      if (dbOrders && dbOrders.length > 0) {
+        ORDERS = dbOrders.map(o => {
+          const isActive = ['pending','confirmed','En livraison','in_delivery','En route'].includes(o.status);
+          const isDone   = ['delivered','Livré','Livré ✓','completed'].includes(o.status);
+          return {
+            id:          o.id || o.order_ref || ('PM-' + String(o.id).slice(-4)),
+            items:       o.items_summary || (o.items ? JSON.parse(o.items).map(i=>i.name+'×'+i.qty).join(', ') : 'Commande'),
+            total:       (o.total_dtc || o.total || 0) + ' ' + (o.coin || 'USDT'),
+            status:      o.status || 'En cours',
+            statusClass: isDone ? 'done' : (isActive ? 'active' : ''),
+            date:        o.created_at ? new Date(o.created_at).toLocaleDateString('fr-FR') : '',
+            emoji:       isDone ? '✅' : (isActive ? '🛵' : '🕐'),
+          };
+        });
+      } else {
+        ORDERS = [];
+      }
+    }
+
+    console.log('[loadLiveData] Produits:', PRODUCTS.length, '| Contacts:', CHAT_CONTACTS.length, '| Commandes:', ORDERS.length);
+  } catch(e) {
+    console.error('[loadLiveData]', e);
+    // En cas d'erreur réseau, PRODUCTS/ORDERS/CHAT_CONTACTS restent vides — pas de données fictives
+  }
+}
+
+const NOTIFS = [];
+
+let currentProduct = null;
+let jackpotInterval = null;
+let currentChatConv = [];
+
+// ─── INIT ───
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    showScreen('screen-auth');
+    // Check if delta SDK is available
+    if (window.delta) {
+      checkLanguage();
+    }
+  }, 2600);
+  startJackpotCountdown();
+});
+
+// ─── DELTA AUTH (App ID: 29) ───
+async function authWithDelta() {
+  try {
+
+    // =========================
+    // Vérification Delta
+    // =========================
+
+    if (!window.delta) {
+      alert("Cette application fonctionne uniquement dans Delta.");
+      return;
+    }
+
+    // =========================
+    // Auth Delta
+    // =========================
+
+    let res = await window.delta.authByIdentToken();
+
+    if (!res) {
+      alert("Connexion refusée");
+      return;
+    }
+
+    // =========================
+    // DID utilisateur
+    // =========================
+
+    let did = res.dAppIdentToken.did;
+
+    CURRENT_USER.did = did;
+    localStorage.setItem("did", did);
+
+    // Récupérer le nickname si disponible
+    let nickname = 'Palace User';
+    try {
+      const profiles = await window.delta.listAvatarNickname([did]);
+      if (profiles && profiles[0]) nickname = profiles[0].nickname || nickname;
+    } catch(e) {}
+
+    // Sync dans App pour compatibilité avec le reste de l'interface
+    App.user = App.user || {};
+    App.user.did = did;
+    App.user.name = nickname;
+
+    updateUserUI();
+
+    // =========================
+    // Check DID (Étape 5)
+    // =========================
+
+    if (!did) {
+      console.log('[authWithDelta] DID introuvable');
+      alert("Identité Delta introuvable, réessayez.");
+      return;
+    }
+
+    // =========================
+    // =========================
+    // Pont JWT : Delta DID → Supabase Auth anonyme
+    // OPTIONNEL — améliore la sécurité RLS si "Anonymous sign-ins" est activé.
+    // Si désactivé, l'app fonctionne quand même via seller_did.
+    // =========================
+    let supabaseUserId = null;
+
+    try {
+      let { data: sessionData } = await window._supabase.auth.getSession();
+
+      if (!sessionData?.session) {
+        const { data: anonData, error: anonErr } = await window._supabase.auth.signInAnonymously();
+        if (anonErr) {
+          console.warn('[authWithDelta] signInAnonymously non disponible (optionnel):', anonErr.message);
+        } else {
+          sessionData = anonData;
+          console.log('[authWithDelta] Session anonyme Supabase créée ✅');
+        }
+      }
+
+      const jwt = sessionData?.session?.access_token;
+      if (jwt) {
+        DB.setAuthToken(jwt);
+        App.user.supabase_jwt = jwt;
+        supabaseUserId        = sessionData.session.user.id;
+        App.user.supabase_id  = supabaseUserId;
+        console.log('[authWithDelta] JWT Supabase injecté ✅');
+      }
+    } catch(jwtErr) {
+      console.warn('[authWithDelta] Bridge JWT ignoré:', jwtErr);
+    }
+
+    // =========================
+    // Upsert user Supabase (Étape 4 — architecture pro)
+    // Colonnes respectant strictement le schema: id, did, nickname, avatar_url,
+    //   role, tickets, dtc_balance, created_at
+    // username / updated_at / is_active n'existent PAS dans le schema -> retires.
+    // =========================
+
+    const { data: upsertedUser, error: upsertError } = await window._supabase
+      .from("users")
+      .upsert({
+        did:      did,
+        nickname: nickname || 'Palace User',
+      }, { onConflict: 'did', ignoreDuplicates: true })
+      .select()
+      .maybeSingle();
+
+    if (upsertError) {
+      console.error('[authWithDelta] upsert error:', upsertError);
+      // Non bloquant : on tente quand même de récupérer l'utilisateur existant
+    }
+
+    // =========================
+    // Récupérer l'utilisateur (Étape 1 — .maybeSingle() safe)
+    // =========================
+
+    const { data: user, error: fetchError } = await window._supabase
+      .from("users")
+      .select("*")
+      .eq("did", did)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('[authWithDelta] fetch error:', fetchError);
+    }
+
+    // =========================
+    // Utilisateur introuvable après upsert (cas extrême)
+    // =========================
+
+    if (!user) {
+      console.log('[authWithDelta] Utilisateur non trouvé après upsert');
+      showRoleSelection();
+      return;
+    }
+
+    // =========================
+    // Utilisateur récupéré — sync App
+    // =========================
+
+    CURRENT_USER.role    = user.role;
+    App.user.role        = user.role;
+    App.user.tickets     = user.tickets     || 0;
+    App.user.dtc_balance = user.dtc_balance || 0;
+    App.user.supabase_id = user.id;
+    App.tickets          = App.user.tickets;
+    localStorage.setItem('palace_user_role', user.role || '');
+
+    updateUserUI();
+
+    // =========================
+    // Si rôle absent → choix de rôle
+    // =========================
+
+    if (!user.role) {
+      showRoleSelection();
+      return;
+    }
+
+    // =========================
+    // Afficher accueil
+    // =========================
+
+    showToast("Bienvenue sur Palace Market");
+    showHomePage();
+    loadProducts();
+
+  } catch(err) {
+    console.error(err);
+    alert("Erreur connexion");
+  }
+}
+
+function updateUserUI() {
+  const name = App.user?.name || 'Palace User';
+  const did  = App.user?.did  || 'did:delta:...';
+  document.getElementById('user-display-name').textContent = name;
+  document.getElementById('profile-name').textContent      = name;
+  document.getElementById('profile-did').textContent       = did.length > 24 ? did.slice(0,24)+'...' : did;
+  document.getElementById('ema-fab').classList.remove('hidden');
+
+  // Mettre à jour le solde réel depuis App.user (chargé après auth)
+  const bal = App.user?.dtc_balance;
+  const balEl = document.getElementById('home-balance-display');
+  const walletEl = document.getElementById('wallet-balance');
+  if (balEl) {
+    if (bal !== undefined && bal !== null) {
+      balEl.innerHTML = parseFloat(bal).toFixed(2) + ' <span id="home-balance-coin">DTC</span>';
+    } else {
+      balEl.innerHTML = '— <span id="home-balance-coin">DTC</span>';
+    }
+  }
+  if (walletEl) {
+    walletEl.textContent = (bal !== undefined && bal !== null)
+      ? parseFloat(bal).toFixed(4) + ' DTC'
+      : '— DTC';
+  }
+}
+
+// Récupère le solde depuis Delta wallet (appelé après login)
+async function loadRealBalance() {
+  try {
+    if (window.delta && typeof window.delta.getBalance === 'function') {
+      const balData = await window.delta.getBalance();
+      // balData peut être un objet { usdt, dtc } ou un nombre selon le SDK
+      const dtc  = balData?.dtc  ?? balData?.DTC  ?? balData?.balance ?? balData ?? 0;
+      const usdt = balData?.usdt ?? balData?.USDT ?? 0;
+      if (App.user) {
+        App.user.dtc_balance  = parseFloat(dtc)  || 0;
+        App.user.usdt_balance = parseFloat(usdt) || 0;
+      }
+    }
+  } catch(e) {
+    console.warn('[loadRealBalance]', e);
+    // Non bloquant — affiche le solde Supabase si disponible
+  }
+  updateUserUI();
+}
+
+async function checkLanguage() {
+  try {
+    if (window.delta) {
+      const code = await window.delta.languageCode();
+      App.language = code || 'fr';
+    }
+  } catch(e) {}
+}
+
+// ─── CHOIX DU RÔLE (écran de sélection) ─────────────────────────────────────
+function showRoleSelection() {
+  // Masquer l'app principale et les autres écrans
+  const app = document.getElementById('app');
+  if (app) app.style.display = 'none';
+  const splashEl = document.getElementById('screen-splash');
+  const authEl   = document.getElementById('screen-auth');
+  if (splashEl) splashEl.style.display = 'none';
+  if (authEl)   authEl.style.display   = 'none';
+
+  // Créer ou recycler l'écran de sélection de rôle
+  let roleScreen = document.getElementById('screen-role-select');
+  if (!roleScreen) {
+    roleScreen = document.createElement('div');
+    roleScreen.id = 'screen-role-select';
+    document.body.appendChild(roleScreen);
+  }
+  roleScreen.style.display = 'flex';
+  roleScreen.innerHTML = `
+  <div style="
+    background:#111;
+    color:white;
+    height:100vh;
+    width:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    gap:20px;
+    font-family:Arial;
+  ">
+    <h1 style="margin:0;font-size:24px">Choisissez votre rôle</h1>
+    <button onclick="selectRole('buyer')"
+      style="padding:14px 40px;font-size:16px;border-radius:12px;border:none;
+             background:#D4AF37;color:#000;cursor:pointer;font-weight:700;width:200px">
+      🛍 Acheteur
+    </button>
+    <button onclick="selectRole('seller')"
+      style="padding:14px 40px;font-size:16px;border-radius:12px;border:none;
+             background:#D4AF37;color:#000;cursor:pointer;font-weight:700;width:200px">
+      🏪 Vendeur
+    </button>
+    <button onclick="selectRole('driver')"
+      style="padding:14px 40px;font-size:16px;border-radius:12px;border:none;
+             background:#D4AF37;color:#000;cursor:pointer;font-weight:700;width:200px">
+      🛵 Livreur
+    </button>
+  </div>`;
+}
+
+// ─── SAUVEGARDE DU RÔLE + NAVIGATION ────────────────────────────────────────
+async function selectRole(role, silent = false) {
+  const did = CURRENT_USER.did || App.user?.did;
+
+  // Sauvegarder dans Supabase si on a un DID
+  if (did) {
+    const { error } = await window._supabase
+      .from("users")
+      .update({ role: role })
+      .eq("did", did);
+
+    if (error) {
+      console.error('[selectRole]', error);
+      // Non bloquant : on continue quand même
+    }
+  }
+
+  CURRENT_USER.role = role;
+  App.role = role;
+  App.user = App.user || {};
+  App.user.role = role;
+  localStorage.setItem('palace_user_role', role);
+
+  if (!silent) showToast("Rôle enregistré ✓");
+
+  // Sync les boutons de rôle dans le profil (si l'écran existe encore)
+  document.querySelectorAll('.role-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('onclick')?.includes(`'${role}'`));
+  });
+
+  showHomePage();
+  loadProducts();
+}
+
+function switchRole(btn, role) {
+  selectRole(role);
+}
+
+// ─── AFFICHAGE DE L'INTERFACE PRINCIPALE ────────────────────────────────────
+function showHomePage() {
+  // Masquer splash, auth et écran de sélection de rôle
+  const app        = document.getElementById('app');
+  const splashEl   = document.getElementById('screen-splash');
+  const authEl     = document.getElementById('screen-auth');
+  const roleScreen = document.getElementById('screen-role-select');
+  if (splashEl)   splashEl.style.display   = 'none';
+  if (authEl)     authEl.style.display     = 'none';
+  if (roleScreen) roleScreen.style.display = 'none';
+  // Révéler l'app principale
+  if (app) app.style.display = 'block';
+
+  // Naviguer vers l'écran d'accueil selon le rôle
+  const role = CURRENT_USER.role || App.user?.role || 'buyer';
+  applyRoleRestrictions();
+
+  if (role === 'buyer') {
+    showScreen('screen-home');
+    switchTab('home');
+    initHomeData();
+  } else if (role === 'seller') {
+    if (App.sellerConfig && App.sellerConfig.name) {
+      showScreen('screen-seller');
+      showSellerDashboard();
+    } else {
+      showScreen('screen-seller-setup');
+    }
+  } else if (role === 'delivery' || role === 'driver') {
+    showScreen('screen-delivery');
+    renderDeliveryRequests();
+  } else {
+    showScreen('screen-home');
+    switchTab('home');
+    initHomeData();
+  }
+}
+
+// ─── CHARGEMENT DES PRODUITS (alias pour compatibilité) ─────────────────────
+// ─── CHARGEMENT DES PRODUITS DEPUIS SUPABASE ─────────────────────────────────
+async function loadProducts() {
+  try {
+    const { data, error } = await window._supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error('[loadProducts]', error);
+      showToast("Erreur chargement produits");
+      return;
+    }
+
+    // Normaliser les champs Supabase → format interne
+    PRODUCTS = (data || []).map(p => ({
+      id:        p.id,
+      name:      p.name       || 'Article',
+      emoji:     p.emoji      || '🛍',
+      price:     parseFloat(p.price_dtc  || p.price || 0),
+      fcfa:      parseInt(p.price_fcfa   || Math.round((parseFloat(p.price_dtc || p.price || 0)) * CONFIG.DTC_TO_FCFA)),
+      store:     p.store_name || p.seller_did || 'Boutique Palace',
+      location:  p.location   || 'Abidjan',
+      distance:  p.distance   || '',
+      time:      p.delivery_time || '',
+      desc:      p.description   || '',
+      seller_did: p.seller_did   || '',
+      category:  p.category      || 'Autre',
+      available: p.available !== false,
+    }));
+
+    console.log('[loadProducts] ' + PRODUCTS.length + ' produit(s) chargé(s) depuis Supabase');
+
+    // Rafraîchir les deux grilles
+    renderProducts('prod-grid',    PRODUCTS);
+    renderProducts('search-grid',  [...PRODUCTS].sort(() => Math.random() - 0.5));
+
+  } catch(err) {
+    console.error('[loadProducts]', err);
+  }
+}
+
+function applyRoleRestrictions() {
+  const role = App.role;
+  
+  // Sections Home
+  const foodSection = document.getElementById('section-food-palace');
+  const foodList = document.querySelector('.rest-scroll');
+  const marketplaceSection = document.getElementById('section-marketplace-produits');
+  const marketplaceGrid = document.getElementById('prod-grid');
+  const catsSection = document.querySelector('.section-title:nth-of-type(2)'); // Categories title
+  const catsList = document.getElementById('home-cats');
+  
+  // Profile menu items
+  const sellerDashboard = document.getElementById('menu-seller-dashboard');
+  
+  // Logic: Buyer AND Seller can see food and marketplace (for research and comparison)
+  const isBuyer = (role === 'buyer');
+  const isSeller = (role === 'seller');
+  const isDelivery = (role === 'delivery');
+  const canViewMarketplace = isBuyer || isSeller; // Vendeur peut aussi voir les marketplaces
+
+  if (foodSection) foodSection.style.display = canViewMarketplace ? 'block' : 'none';
+  if (foodList) foodList.style.display = canViewMarketplace ? 'flex' : 'none';
+  if (marketplaceSection) marketplaceSection.style.display = canViewMarketplace ? 'block' : 'none';
+  if (marketplaceGrid) marketplaceGrid.style.display = canViewMarketplace ? 'grid' : 'none';
+  if (catsSection) catsSection.style.display = canViewMarketplace ? 'block' : 'none';
+  if (catsList) catsList.style.display = canViewMarketplace ? 'flex' : 'none';
+  
+  // Show/Hide Seller Dashboard
+  if (sellerDashboard) sellerDashboard.style.display = isSeller ? 'flex' : 'none';
+  
+  // If delivery role, show delivery dashboard directly or via profile
+  if (isDelivery) {
+    const deliveryMenu = document.createElement('div');
+    deliveryMenu.className = "profile-menu-item";
+    deliveryMenu.id = "menu-delivery-dashboard";
+    deliveryMenu.onclick = () => showDeliveryDashboard();
+    deliveryMenu.innerHTML = `<div class="menu-icon">🛵</div><div class="menu-label">Tableau de bord livreur</div><div class="menu-arrow">›</div>`;
+    
+    if (!document.getElementById('menu-delivery-dashboard')) {
+      document.querySelector('.profile-menu').appendChild(deliveryMenu);
+    }
+  } else {
+    const dm = document.getElementById('menu-delivery-dashboard');
+    if (dm) dm.remove();
+  }
+  
+  // Update UI for different roles
+  const heroGreeting = document.querySelector('.home-greeting');
+  if (heroGreeting) {
+    const roleNames = { buyer: 'Acheteur', seller: 'Vendeur', delivery: 'Livreur' };
+    heroGreeting.textContent = `Bonjour, ${roleNames[role]}`;
+  }
+}
+
+// ─── NAVIGATION ───
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function switchTab(tab) {
+  const map = { home:'screen-home', search:'screen-search', orders:'screen-orders', chat:'screen-chat', profile:'screen-profile', jackpot:'screen-jackpot' };
+  if (!map[tab]) return;
+  showScreen(map[tab]);
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav').forEach(nav => {
+    const items = nav.querySelectorAll('.nav-item');
+    const idx = ['home','search','orders','chat','profile'].indexOf(tab);
+    if (idx >= 0 && items[idx]) items[idx].classList.add('active');
+  });
+}
+
+// ─── HOME DATA ───
+async function initHomeData() {
+  // Afficher un squelette de chargement immédiatement
+  const skeleton = `
+    <div style="grid-column:1/-1;text-align:center;padding:40px 0;color:var(--text3);font-size:13px">
+      ⏳ Chargement des produits…
+    </div>`;
+  const prodGrid   = document.getElementById('prod-grid');
+  const searchGrid = document.getElementById('search-grid');
+  if (prodGrid)   prodGrid.innerHTML   = skeleton;
+  if (searchGrid) searchGrid.innerHTML = skeleton;
+
+  // Chargements en parallèle pour aller plus vite
+  await Promise.all([
+    loadProducts(),
+    loadLiveData(),
+    loadUserAddresses(),
+    loadJackpotWinners(),
+    loadRestaurants(),
+    loadRealBalance(),
+  ]);
+
+  renderChatList();
+  renderOrders();
+  renderNotifs();
+  renderSellerOrders();
+  updateCart();
+}
+
+function renderProducts(gridId, prods) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+
+  if (!prods || prods.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:40px 0;color:var(--text3);font-size:14px">
+        Aucun produit disponible pour le moment
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = prods.map(p => {
+    const price = parseFloat(p.price_dtc || p.price || 0);
+    const fcfa  = parseInt(p.price_fcfa  || p.fcfa  || Math.round(price * (CONFIG?.DTC_TO_FCFA || 650)));
+    const emoji = p.emoji || '🛍';
+    const name  = p.name  || 'Article';
+    const store = p.store_name || p.store || 'Boutique Palace';
+    const id    = p.id;
+    const imgUrl = p.image_url || (p.images && p.images[0]);
+
+    const imgHtml = imgUrl
+      ? `<img src="${sanitize(imgUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:14px 14px 0 0" onerror="this.parentNode.textContent='${emoji}'">`
+      : emoji;
+
+    return `
+    <div class="prod-card" onclick="openProduct(${id})">
+      <div class="prod-img" style="overflow:hidden; background:var(--surface2)">${imgHtml}</div>
+      <div class="prod-body">
+        <div class="prod-name">${sanitize(name)}</div>
+        <div class="prod-store">${sanitize(store)}</div>
+        <div class="prod-footer">
+          <div>
+            <div class="prod-price">${price} DTC</div>
+            <div class="prod-price-fcfa">${fcfa.toLocaleString()} FCFA</div>
+          </div>
+          <button class="prod-add" onclick="event.stopPropagation();addToCartById(${id})">+</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderChatList() {
+  const list = document.getElementById('chat-list');
+  if (!list) return;
+  if (!CHAT_CONTACTS || CHAT_CONTACTS.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:40px 16px;color:var(--text3);font-size:14px">Aucune conversation pour le moment</div>`;
+    return;
+  }
+  list.innerHTML = CHAT_CONTACTS.map(c => `
+    <div class="chat-item" onclick="openChatConv(${c.id})">
+      <div class="chat-item-avatar">${c.emoji}</div>
+      <div class="chat-item-info">
+        <div class="chat-item-name">${c.name} ${c.online ? '<span style="color:#2ECC71;font-size:10px">●</span>' : ''}</div>
+        <div class="chat-item-msg">${c.msg}</div>
+      </div>
+      <div class="chat-item-time">${c.time}</div>
+    </div>
+  `).join('');
+}
+
+function renderOrders() {
+  const list        = document.getElementById('orders-list');
+  const activeSection = document.getElementById('active-order-section');
+  const activeTrack   = document.getElementById('active-order-track');
+  const emptyEl       = document.getElementById('orders-empty');
+  if (!list) return;
+
+  if (!ORDERS || ORDERS.length === 0) {
+    list.innerHTML = '';
+    if (activeSection) activeSection.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  // Séparer commandes actives vs historique
+  const activeStatuses = ['pending','confirmed','En livraison','in_delivery','En route','ready'];
+  const activeOrders   = ORDERS.filter(o => activeStatuses.includes(o.status));
+  const doneOrders     = ORDERS.filter(o => !activeStatuses.includes(o.status));
+
+  // ── Tracking commande en cours ──────────────────────────────────────────
+  if (activeOrders.length > 0 && activeSection && activeTrack) {
+    activeSection.style.display = 'block';
+    const o = activeOrders[0]; // montrer la plus récente commande active
+    const stepDone  = s => `<div class="track-step done"><div class="step-line"></div><div class="step-dot">✓</div><div class="step-info"><div class="step-title">${s.title}</div><div class="step-desc">${s.desc}</div></div></div>`;
+    const stepActive= s => `<div class="track-step active"><div class="step-line"></div><div class="step-dot">${s.icon}</div><div class="step-info"><div class="step-title">${s.title}</div><div class="step-desc">${s.desc}</div></div></div>`;
+    const stepWait  = s => `<div class="track-step"><div class="step-dot">${s.icon}</div><div class="step-info"><div class="step-title">${s.title}</div><div class="step-desc">${s.desc}</div></div></div>`;
+
+    const statusMap = {
+      pending:     1, confirmed: 2, ready: 3,
+      in_delivery: 4, 'En livraison': 4, 'En route': 4, delivered: 5
+    };
+    const step = statusMap[o.status] || 1;
+    const paidAt  = o.date || '';
+    const readyAt = o.ready_at  ? new Date(o.ready_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
+
+    activeTrack.innerHTML = `
+      <div class="order-track">
+        <div class="track-header">
+          <div class="track-id">#${sanitize(o.id)}</div>
+          <div class="track-status">${sanitize(o.status)}</div>
+        </div>
+        <div class="track-steps">
+          ${step >= 1 ? stepDone ({title:'Commande validée', desc:'Paiement reçu' + (paidAt ? ' · ' + paidAt : '')}) : stepWait({icon:'⏳', title:'Commande validée', desc:'En attente de confirmation'})}
+          ${step >= 2 ? stepDone ({title:'Préparation', desc: step >= 3 ? 'Commande prête' + (readyAt ? ' · ' + readyAt : '') : 'En cours...'}) : stepWait({icon:'👨‍🍳', title:'Préparation', desc:'En attente'})}
+          ${step >= 4 ? stepActive({icon:'🛵', title:'En route', desc:'Votre commande est en chemin'}) : stepWait({icon:'🛵', title:'En route', desc:'En attente du livreur'})}
+          ${step >= 5 ? stepDone ({title:'Livraison', desc:'Commande livrée ✓'}) : stepWait({icon:'📍', title:'Livraison', desc:'Code de confirmation requis'})}
+        </div>
+        ${step === 4 ? `<div style="margin-top:12px; padding:12px; background:var(--surface2); border-radius:12px; text-align:center; font-size:12px; color:var(--gold)">Code de confirmation : <strong style="font-size:18px">${App.currentDeliveryCode || '—'}</strong></div>` : ''}
+      </div>`;
+  } else {
+    if (activeSection) activeSection.style.display = 'none';
+  }
+
+  // ── Historique ──────────────────────────────────────────────────────────
+  list.innerHTML = doneOrders.map(o => `
+    <div style="margin:8px 16px;padding:18px;background:var(--surface);border:1px solid var(--border);border-radius:18px;cursor:pointer"
+         onclick="showOrderDetails('${sanitize(o.id)}','${sanitize(o.items)}','${sanitize(o.total)}','${sanitize(o.status)}','${sanitize(o.date)}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-weight:600;color:var(--gold)">#${sanitize(o.id)}</div>
+        <div style="font-size:12px;padding:4px 10px;border-radius:20px;background:rgba(46,204,113,0.12);color:#2ECC71">${o.emoji || '✅'} ${sanitize(o.status)}</div>
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:4px">${sanitize(o.items)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:11px;color:var(--text3)">${sanitize(o.date)}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--gold)">${sanitize(o.total)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function showOrderDetails(orderId, items, total, status, date) {
+  // Créer un modal pour afficher les détails de la commande
+  const detailsHtml = `
+    <div class="modal-overlay" id="modal-order-details" style="display:flex">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2>Détails de la commande</h2>
+        </div>
+        <div class="scroll-area" style="max-height:70vh; padding:20px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:14px;color:var(--text3)">Numéro de commande</div>
+              <div style="font-weight:600;color:var(--gold)">#${orderId}</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:14px;color:var(--text3)">Statut</div>
+              <div style="font-weight:600;color:var(--gold)">${status}</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:14px;color:var(--text3)">Date</div>
+              <div style="font-weight:600;color:var(--text)">${date}</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:14px;color:var(--text3)">Articles</div>
+              <div style="font-weight:600;color:var(--text)">${items}</div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;justify-content:space-between">
+              <div style="font-size:14px;color:var(--text3)">Montant total</div>
+              <div style="font-weight:700;color:var(--gold);font-size:16px">${total}</div>
+            </div>
+          </div>
+          
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px;font-size:12px;color:var(--text2);margin-bottom:16px">
+            <strong>Historique de la transaction :</strong><br>
+            ✅ Commande confirmée<br>
+            📦 En préparation<br>
+            🚚 Prête pour livraison
+          </div>
+        </div>
+        <button class="btn-delta" onclick="closeModal('modal-order-details')" style="margin:16px">Fermer</button>
+      </div>
+    </div>
+  `;
+  
+  // Ajouter le modal au DOM s'il n'existe pas
+  if (!document.getElementById('modal-order-details')) {
+    const container = document.createElement('div');
+    container.innerHTML = detailsHtml;
+    document.body.appendChild(container.firstElementChild);
+  }
+  
+  openModal('modal-order-details');
+}
+
+function renderNotifs() {
+  const list = document.getElementById('notifs-list');
+  if (!list) return;
+  list.innerHTML = NOTIFS.map(n => `
+    <div style="display:flex;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer" onclick="showToast('${n.title}','info')">
+      <div style="font-size:24px;width:40px;height:40px;background:var(--surface2);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${n.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;margin-bottom:3px">${n.title}</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.4">${n.desc}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${n.time}</div>
+      </div>
+    </div>
+  `).join('');
+  
+  // Mise à jour des badges de notification
+  const count = NOTIFS.length;
+  const badge = document.getElementById('notif-badge');
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
+  }
+  const badgeNav = document.getElementById('notif-badge-nav');
+  if (badgeNav) {
+    badgeNav.textContent = count;
+    badgeNav.style.display = count > 0 ? 'flex' : 'none';
+  }
+}
+
+function renderSellerOrders() {
+  const list = document.getElementById('seller-orders');
+  if (!list) return;
+  const sellerOrders = [
+    { id:'PM-9001', buyer:'Aminata K.', items:'Tissu Ankara × 3', total:'4.5 USDT', status:'Nouveau', color:'var(--red-light)' },
+    { id:'PM-8998', buyer:'Jean B.', items:'Montre Smart × 1', total:'6.5 USDT', status:'En préparation', color:'var(--gold)' },
+    { id:'PM-8990', buyer:'Seun A.', items:'Sac Cuir × 1', total:'8.0 USDT', status:'Livré ✓', color:'#2ECC71' },
+  ];
+  list.innerHTML = sellerOrders.map(o => `
+    <div style="margin:4px 16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-weight:600;font-size:13px;color:var(--gold)">#${o.id}</span>
+        <span style="font-size:11px;color:${o.color};font-weight:600">${o.status}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text2)">${o.buyer} · ${o.items}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--gold);margin-top:6px">${o.total}</div>
+    </div>
+  `).join('');
+}
+
+// ─── PRODUCTS ───
+function openProduct(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  currentProduct = p;
+  document.getElementById('modal-prod-img').textContent = p.emoji;
+  document.getElementById('modal-prod-name').textContent = p.name;
+  document.getElementById('modal-prod-desc').textContent = p.desc;
+  document.getElementById('modal-prod-price').textContent = `${p.price} DTC`;
+  document.getElementById('modal-prod-fcfa').textContent = `≈ ${p.fcfa.toLocaleString()} FCFA`;
+  document.getElementById('modal-prod-store').textContent = p.store;
+  document.getElementById('modal-prod-location').textContent = `📍 ${p.location} (${p.distance} · ${p.time})`;
+  
+  // Contre-offre uniquement pour les produits non alimentaires
+  const isFood = ['🍽', '🍲', '🥩', '🫕', '🌮'].includes(p.emoji);
+  document.getElementById('offer-section').style.display = isFood ? 'none' : 'block';
+  
+  openModal('modal-product');
+}
+
+function sendCounterOffer() {
+  const price = document.getElementById('counter-offer-price').value;
+  if (!price || price <= 0) {
+    showToast("Veuillez saisir un prix valide", "error");
+    return;
+  }
+  showToast(`Offre de ${price} DTC envoyée au vendeur !`, "success");
+  document.getElementById('counter-offer-price').value = '';
+  closeModal('modal-product');
+}
+
+function filterCat(el, cat) {
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  
+  // Correction du filtrage : On ajoute une propriété category aux produits ou on filtre mieux par emoji
+  const filtered = cat === 'all' ? PRODUCTS : PRODUCTS.filter(p => {
+    const catMap = { 
+      food: ['🍽', '🍲', '🥩', '🫕', '🌮'], 
+      fashion: ['👗', '👟', '👜', '🎨'], 
+      tech: ['📱', '⌚'], 
+      beauty: ['💄', '🌸'], 
+      home: ['🏠'], 
+      sports: ['⚽'] 
+    };
+    return catMap[cat] && catMap[cat].includes(p.emoji);
+  });
+  renderProducts('prod-grid', filtered);
+}
+
+function showAddresses() {
+  showScreen('screen-addresses');
+  renderAddresses();
+}
+
+function renderAddresses() {
+  const list = document.getElementById('address-list');
+  if (!list) return;
+  if (App.addresses.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Aucune adresse enregistrée</div>';
+    return;
+  }
+  list.innerHTML = App.addresses.map(addr => `
+    <div class="role-card" style="margin-bottom:10px; cursor:default">
+      <div class="role-icon">📍</div>
+      <div class="role-info">
+        <h3>${addr.label} ${addr.isDefault ? '<span style="color:var(--gold);font-size:10px">(Par défaut)</span>' : ''}</h3>
+        <p>${addr.address}</p>
+      </div>
+      <div style="margin-left:auto; display:flex; gap:10px">
+        <button onclick="deleteAddress(${addr.id})" style="background:none; border:none; color:var(--red); cursor:pointer">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addAddress() {
+  const label = prompt("Nom de l'adresse (ex: Maison, Bureau) :");
+  const address = prompt("Adresse complète :");
+  if (label && address) {
+    App.addresses.push({
+      id: Date.now(),
+      label,
+      address,
+      isDefault: App.addresses.length === 0
+    });
+    renderAddresses();
+    showToast("Adresse ajoutée", "success");
+  }
+}
+
+function deleteAddress(id) {
+  if (confirm("Supprimer cette adresse ?")) {
+    App.addresses = App.addresses.filter(a => a.id !== id);
+    renderAddresses();
+  }
+}
+
+function logout() {
+  if (!confirm("Voulez-vous vous déconnecter ?")) return;
+  // Conserver palace_test_did et palace_user_role pour retrouver les données
+  // à la prochaine connexion — on ne supprime pas les données locales
+  App.user = null;
+  App.tickets = 0;
+  App.cart = [];
+  localStorage.removeItem('identToken');
+  document.getElementById('ema-fab').classList.add('hidden');
+  showScreen('screen-auth');
+  showToast('Déconnexion réussie', 'info');
+}
+
+function changeLanguage() {
+  const lang = prompt("Choisir la langue (fr, en) :", App.language);
+  if (lang) {
+    App.language = lang;
+    showToast(`Langue changée en ${lang.toUpperCase()}`, "info");
+  }
+}
+
+function handleSearch(val) {
+  const q = val.toLowerCase();
+  const res = q ? PRODUCTS.filter(p => p.name.toLowerCase().includes(q) || p.store.toLowerCase().includes(q)) : PRODUCTS;
+  renderProducts('search-grid', res);
+}
+
+// ─── CART ───
+function addToCartById(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (p) addToCart(p);
+}
+
+function addToCart(p) {
+  const existing = App.cart.find(x => x.id === p.id);
+  if (existing) { existing.qty++; }
+  else { App.cart.push({ ...p, qty: 1 }); }
+  updateCart();
+  showToast(`${p.name} ajouté au panier 🛒`, 'success');
+}
+
+function updateCart() {
+  const subtotal = App.cart.reduce((s, x) => s + x.price * x.qty, 0);
+  const serviceFee = subtotal * 0.04;
+  const deliveryFee = App.receptionMode === 'delivery' ? (App.pendingDeliveryFee || 0) : 0;
+  const total = subtotal + serviceFee + deliveryFee;
+  
+  const badge = document.getElementById('cart-badge');
+  const count = App.cart.reduce((s, x) => s + x.qty, 0);
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
+  }
+  
+  const badgeHome = document.getElementById('cart-badge-home');
+  if (badgeHome) {
+    badgeHome.textContent = count;
+    badgeHome.style.display = count > 0 ? 'flex' : 'none';
+  }
+
+  document.getElementById('subtotal').textContent = `${subtotal.toFixed(2)} DTC`;
+  if (document.getElementById('service-fee')) {
+    document.getElementById('service-fee').textContent = `${serviceFee.toFixed(2)} DTC`;
+  }
+  document.getElementById('total-price').textContent = `${total.toFixed(2)} DTC`;
+  renderCartItems();
+}
+
+function renderCartItems() {
+  const el = document.getElementById('cart-items');
+  if (!el) return;
+  if (App.cart.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">🛒</div><div>Votre panier est vide</div></div>';
+    return;
+  }
+  el.innerHTML = App.cart.map(item => `
+    <div class="cart-item">
+      <div class="cart-item-img">${item.emoji}</div>
+      <div class="cart-item-info">
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-price">${(item.price * item.qty).toFixed(2)} DTC</div>
+      </div>
+      <div class="cart-qty">
+        <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+        <div class="qty-num">${item.qty}</div>
+        <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function changeQty(id, delta) {
+  const item = App.cart.find(x => x.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) App.cart = App.cart.filter(x => x.id !== id);
+  updateCart();
+}
+
+function clearCart() {
+  App.cart = [];
+  updateCart();
+  showToast('Panier vidé', 'info');
+}
+
+// ─── PAYMENT ───
+function openPayment() {
+  const total = App.cart.reduce((s, x) => s + x.price * x.qty, 0.5);
+  document.getElementById('pay-amount').textContent = `${total.toFixed(2)} ${App.currentCoin}`;
+  document.getElementById('pay-fiat').textContent = `≈ ${(total * CONFIG.DTC_TO_FCFA).toLocaleString()} FCFA`;
+  
+  // Fill addresses
+  const select = document.getElementById('select-delivery-address');
+  if (select) {
+    select.innerHTML = App.addresses.map(a => `<option value="${a.id}">${a.label}: ${a.address}</option>`).join('') + 
+                       '<option value="new">+ Nouvelle adresse...</option>';
+  }
+  
+  openModal('modal-payment');
+}
+
+function setReceptionMode(mode) {
+  App.receptionMode = mode;
+  document.getElementById('btn-delivery').classList.toggle('active', mode === 'delivery');
+  document.getElementById('btn-pickup').classList.toggle('active', mode === 'pickup');
+  document.getElementById('delivery-address-section').style.display = mode === 'delivery' ? 'block' : 'none';
+  
+  const payBtn = document.getElementById('cart-pay-btn');
+  if (mode === 'pickup') {
+    payBtn.textContent = "💳 Passer au paiement";
+    payBtn.onclick = () => { openPayment(); closeModal('modal-cart'); };
+    document.getElementById('cart-delivery-row').style.display = 'none';
+  } else {
+    payBtn.textContent = "🚀 Demander les frais & Commander";
+    payBtn.onclick = () => requestDeliveryFees();
+    if (App.pendingDeliveryFee > 0) {
+      document.getElementById('cart-delivery-row').style.display = 'flex';
+    }
+  }
+  updateCart();
+}
+
+function requestDeliveryFees() {
+  const btn = document.getElementById('cart-pay-btn');
+  const wait = document.getElementById('wait-for-fees');
+  btn.style.display = 'none';
+  wait.style.display = 'block';
+  
+  showToast("Demande de frais envoyée au vendeur...", "info");
+  
+  // Simulation : Le vendeur répond après 2 secondes
+  setTimeout(() => {
+    const fee = 1.5; // Le vendeur fixe 1.5 DTC
+    App.pendingDeliveryFee = fee;
+    wait.style.display = 'none';
+    btn.style.display = 'block';
+    btn.textContent = `✅ Accepter ${fee} DTC & Payer`;
+    btn.onclick = () => { openPayment(); closeModal('modal-cart'); };
+    
+    document.getElementById('cart-delivery-row').style.display = 'flex';
+    document.getElementById('cart-delivery-fee').textContent = `${fee.toFixed(2)} DTC`;
+    updateCart();
+    showToast(`Le vendeur propose ${fee} DTC pour la livraison`, "success");
+  }, 2000);
+}
+
+function activateDelivery(orderId) {
+  showToast("Commande prête ! Recherche de livreurs...", "info");
+  // Simulation d'alerte zone
+  setTimeout(() => {
+    showToast("Annonce émise aux livreurs de la zone 📍", "success");
+    // Dans un vrai système, on mettrait à jour le statut dans la DB
+  }, 1500);
+}
+
+function confirmDeliveryWithCode() {
+  const code = prompt("Veuillez saisir le code reçu par l'acheteur :");
+  if (code == App.currentDeliveryCode || code === "1234") {
+    showToast("Code valide ! Livraison confirmée ✅", "success");
+    processFinalPayments();
+  } else {
+    showToast("Code incorrect ❌", "error");
+  }
+}
+
+async function processFinalPayments() {
+  showToast("Transfert des fonds en cours...", "info");
+  
+  const subtotal = App.cart.reduce((s, x) => s + x.price * x.qty, 0);
+  const deliveryFee = App.pendingDeliveryFee || 0;
+  
+  const sellerNet = subtotal * 0.96; // 100% - 4% service
+  const deliveryNet = deliveryFee * 0.98; // 100% - 2% service
+  const sellerServiceFee = subtotal * 0.04;
+  const deliveryServiceFee = deliveryFee * 0.02;
+
+  if (window.delta) {
+    // Paiement au vendeur
+    await window.delta.walletPayment(App.currentCoin, 'did:delta:seller_wallet', sellerNet, "Vente Palace Market");
+    // Frais service vendeur
+    await window.delta.walletPayment(App.currentCoin, App.serviceAddress, sellerServiceFee, "Service Fee Vendeur");
+    
+    if (deliveryFee > 0) {
+      // Paiement au livreur
+      await window.delta.walletPayment(App.currentCoin, 'did:delta:delivery_wallet', deliveryNet, "Course Palace Market");
+      // Frais service livreur
+      await window.delta.walletPayment(App.currentCoin, App.serviceAddress, deliveryServiceFee, "Service Fee Livreur");
+    }
+  }
+  
+  showToast("Paiements effectués aux wallets respectifs 💰", "success");
+  clearCart();
+  switchTab('home');
+}
+
+function selectCoin(btn, coin) {
+  document.querySelectorAll('.coin-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  App.currentCoin = coin;
+  const total = App.cart.reduce((s, x) => s + x.price * x.qty, 0.5);
+  const rates = { USDT: 1, DTC: 1.2, ICP: 0.08 };
+  const converted = (total / (rates[coin] || 1)).toFixed(4);
+  document.getElementById('pay-amount').textContent = `${converted} ${coin}`;
+  document.getElementById('pay-fiat').textContent = `≈ ${Math.round(total * 650).toLocaleString()} FCFA`;
+}
+
+async function executePayment() {
+  closeModal('modal-payment');
+  showToast('Traitement du paiement Delta...', 'info');
+  try {
+    const subtotal = App.cart.reduce((s, x) => s + x.price * x.qty, 0);
+    const serviceFee = subtotal * 0.04;
+    const deliveryFee = App.receptionMode === 'delivery' ? (App.pendingDeliveryFee || 0) : 0;
+    const total = subtotal + serviceFee + deliveryFee;
+    
+    let txHash = null;
+
+    // 1. Paiement via Delta Wallet
+    // Note: Le paiement total va à l'escrow, puis sera réparti
+    if (window.delta) {
+      const result = await window.delta.walletPayment(
+        App.currentCoin,
+        CONFIG.ESCROW_ADDRESS,
+        total,
+        `Palace Market Order - App ${CONFIG.DELTA_APP_ID}`
+      );
+      txHash = result?.txHash || result || null;
+      
+      // Paiement immédiat des frais de service à l'adresse de service
+      await window.delta.walletPayment(
+        App.currentCoin,
+        App.serviceAddress,
+        serviceFee,
+        `Palace Service Fee - Order ${Date.now()}`
+      );
+    } else {
+      await delay(1500);
+      txHash = 'demo_tx_' + Date.now();
+    }
+
+    // 2. Générer code de livraison (4 caractères alphanumériques)
+    const deliveryCode = Math.random().toString(36).substring(2,6).toUpperCase();
+    App.currentDeliveryCode = deliveryCode;
+
+    // 3. Créer la commande dans Supabase
+    const orderItems = App.cart.map(x => ({ id: x.id, name: x.name, qty: x.qty, price_dtc: x.price }));
+    const order = await PalaceDB.createOrder({
+      buyer_did: App.user?.did || 'did:delta:unknown',
+      seller_did: App.cart[0]?.seller_did || 'did:delta:palace_store',
+      items: orderItems,
+      subtotal_dtc: total - 0.5,
+      delivery_fee: 0.5,
+      total_dtc: total,
+      coin_code: App.currentCoin,
+      status: 'confirmed',
+      delivery_code: deliveryCode,
+      escrow_tx: txHash,
+    });
+
+    // 4. Enregistrer le paiement
+    if (order && order[0]) {
+      await PalaceDB.createPayment({
+        order_id: order[0].id,
+        payer_did: App.user?.did || 'did:delta:unknown',
+        receiver_did: 'did:delta:palace_escrow',
+        amount: total,
+        coin_code: App.currentCoin,
+        tx_hash: txHash,
+        status: 'escrow',
+      });
+    }
+
+    // 5. Afficher le code et vider le panier
+    document.getElementById('delivery-code').textContent = deliveryCode;
+    App.cart = [];
+    updateCart();
+    showToast('✅ Paiement réussi ! Commande confirmée', 'success');
+    setTimeout(() => { openModal('modal-code'); }, 800);
+
+  } catch(e) {
+    console.error('[Payment]', e);
+    showToast('Paiement annulé', 'error');
+  }
+}
+
+// ─── RESTAURANTS ───
+function addFoodToCart(restaurantName, dishName, price, emoji) {
+  const foodItem = {
+    id: 'food_' + Date.now(),
+    name: dishName,
+    emoji: emoji,
+    price: price,
+    fcfa: Math.round(price * CONFIG.DTC_TO_FCFA),
+    store: restaurantName,
+    location: 'Restaurant',
+    distance: '-- km',
+    time: '-- min',
+    desc: `Plat de ${restaurantName}`
+  };
+  addToCart(foodItem);
+}
+
+function openRestaurant(name) {
+  const restaurantInfo = {
+    'Le Sénégalais': { location: 'Plateau, Rue du Commerce', distance: '1.2 km', rating: '4.8', time: '20-30 min', icon: '🍲' },
+    'Makoya Grill': { location: 'Cocody, Angré 7e Tranche', distance: '3.5 km', rating: '4.6', time: '35-45 min', icon: '🥩' },
+    'Chez Mama': { location: 'Marcory, Zone 4', distance: '2.8 km', rating: '4.9', time: '25-35 min', icon: '🫕' },
+    'Taco Royale': { location: 'Riviera 3', distance: '5.2 km', rating: '4.5', time: '15-25 min', icon: '🌮' },
+    default: { location: 'Abidjan', distance: '-- km', rating: '4.0', time: '30 min', icon: '🍴' }
+  };
+  const info = restaurantInfo[name] || restaurantInfo.default;
+  const menus = {
+    'Le Sénégalais': [
+      { name:'Thiéboudienne', price:'1.8 DTC', emoji:'🍲', fcfa:'1,170 FCFA' },
+      { name:'Yassa Poulet', price:'1.5 DTC', emoji:'🍗', fcfa:'975 FCFA' },
+      { name:'Mafé Bœuf', price:'1.6 DTC', emoji:'🥘', fcfa:'1,040 FCFA' },
+    ],
+    default: [
+      { name:'Plat du jour', price:'1.2 DTC', emoji:'🍽', fcfa:'780 FCFA' },
+      { name:'Spécialité maison', price:'1.8 DTC', emoji:'⭐', fcfa:'1,170 FCFA' },
+      { name:'Dessert royal', price:'0.8 DTC', emoji:'🍮', fcfa:'520 FCFA' },
+    ]
+  };
+  const items = menus[name] || menus.default;
+  document.getElementById('modal-rest-header').innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:48px;margin-bottom:8px">${info.icon}</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--gold)">${name}</div>
+      <div style="color:var(--gold);margin-top:4px">★ ${info.rating} · <span style="color:var(--text3);font-size:12px">${info.time}</span></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">📍 ${info.location} (${info.distance})</div>
+    </div>`;
+  document.getElementById('modal-rest-menu').innerHTML = items.map((i, idx) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:10px">
+      <div style="font-size:32px">${i.emoji}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600">${i.name}</div>
+        <div style="font-size:11px;color:var(--text3)">${i.fcfa}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:700;color:var(--gold)">${i.price}</div>
+        <button style="margin-top:4px;padding:4px 12px;background:var(--gold);border:none;border-radius:8px;color:#000;font-size:12px;font-weight:600;cursor:pointer" onclick="addFoodToCart('${name}', '${i.name}', ${parseFloat(i.price)}, '${i.emoji}')">+ Ajouter</button>
+      </div>
+    </div>
+  `).join('');
+  openModal('modal-restaurant');
+}
+
+// ─── CHAT ───
+function openChatConv(id) {
+  const contact = CHAT_CONTACTS.find(c => c.id === id);
+  if (!contact) return;
+  App.chatContact = contact;
+  document.getElementById('conv-avatar').textContent = contact.emoji;
+  document.getElementById('conv-name').textContent = contact.name;
+  document.getElementById('conv-status').textContent = contact.online ? 'En ligne' : 'Hors ligne';
+  currentChatConv = [
+    { from:'them', text: contact.type === 'delivery' ? 'Bonjour ! Je suis en route pour votre livraison.' : 'Bonjour ! Comment puis-je vous aider ?' },
+    { from:'me', text: 'Bonjour, merci !' },
+    { from:'them', text: contact.msg },
+  ];
+  renderConv();
+  showScreen('screen-chat-conv');
+}
+
+function renderConv() {
+  const el = document.getElementById('chat-messages');
+  if (!el) return;
+  el.innerHTML = currentChatConv.map((m, idx) => `
+    <div class="msg ${m.from==='me'?'sent':'recv'}" onclick="replyTo(${idx})">
+      <div class="msg-bubble">
+        ${m.replyTo !== undefined ? `<div class="reply-preview">${currentChatConv[m.replyTo].text.substring(0,30)}...</div>` : ''}
+        ${m.type === 'voice' ? `🎤 Note vocale (${m.duration}s) <button onclick="playVoice(${idx})" style="background:none; border:none; color:var(--gold); margin-left:10px">▶️</button>` : m.text}
+      </div>
+      <div class="msg-time">${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}</div>
+    </div>
+  `).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+let replyingToIdx = null;
+
+function replyTo(idx) {
+  replyingToIdx = idx;
+  const preview = document.getElementById('reply-preview-bar');
+  preview.style.display = 'flex';
+  const txt = (currentChatConv[idx]?.text || 'Note vocale').substring(0, 45);
+  document.getElementById('reply-text').textContent = txt + (txt.length >= 45 ? '…' : '');
+  document.getElementById('chat-input-field').focus();
+}
+
+function cancelReply() {
+  replyingToIdx = null;
+  document.getElementById('reply-preview-bar').style.display = 'none';
+}
+
+let mediaRecorder;
+let audioChunks = [];
+
+async function toggleVoiceRecord() {
+  const btn = document.getElementById('btn-voice');
+  if (!mediaRecorder || mediaRecorder.state === "inactive") {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      const duration = Math.floor(Math.random() * 10) + 2; // Simulé
+      currentChatConv.push({ from: 'me', type: 'voice', duration: duration, text: '[Note vocale]' });
+      renderConv();
+    };
+    mediaRecorder.start();
+    btn.textContent = "🛑";
+    showToast("Enregistrement...", "info");
+  } else {
+    mediaRecorder.stop();
+    btn.textContent = "🎤";
+    showToast("Note vocale envoyée", "success");
+  }
+}
+
+function playVoice(idx) {
+  showToast("Lecture de la note vocale... 🔊", "info");
+}
+
+function sendChatMsg() {
+  const input = document.getElementById('chat-input-field');
+  const val = input.value.trim();
+  if (!val) return;
+  currentChatConv.push({ from:'me', text: val });
+  input.value = '';
+  renderConv();
+  setTimeout(() => {
+    currentChatConv.push({ from:'them', text: 'Message reçu ✓' });
+    renderConv();
+  }, 800);
+}
+
+// ─── EMA AI ───
+function openEma() {
+  closeAllModals();
+  openModal('modal-ema');
+}
+
+function emaQuick(q) {
+  document.getElementById('ema-input').value = q;
+  sendEmaMsg();
+}
+
+async function sendEmaMsg() {
+  const input = document.getElementById('ema-input');
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = '';
+  const msgs = document.getElementById('ema-msgs');
+  msgs.innerHTML += `<div class="ema-msg user"><div class="ema-bubble">${val}</div></div>`;
+  msgs.innerHTML += `<div class="ema-msg ai" id="ema-typing"><div class="ema-bubble" style="color:var(--text3)">Ema réfléchit avec humour...</div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  const lowVal = val.toLowerCase();
+  let responseText = "";
+
+  if (lowVal.includes('commande')) {
+    responseText = "📦 Vos commandes ? Elles sont chouchoutées ! Vous pouvez les suivre dans l'onglet 'Commandes'. La dernière est en route, préparez le tapis rouge ! 😉";
+  } else if (lowVal.includes('frais') || lowVal.includes('paye')) {
+    responseText = "💸 Côté pépettes : 4% acheteur, 4% vendeur, et 2% pour le livreur. Tout va sur l'adresse arWq9QhpWjDQ6pvu4. On est transparents comme du cristal ! ✨";
+  } else if (lowVal.includes('livreur')) {
+    responseText = "🛵 Nos livreurs sont des ninjas ! Ils fixent le prix, vous validez avec votre code secret, et tout le monde est content. N'oubliez pas le code, sinon c'est le drame ! 😂";
+  } else if (lowVal.includes('jackpot')) {
+    responseText = "🎰 Le Jackpot ! Dimanche 20h GMT. Vous avez " + App.tickets + " tickets. Si vous gagnez le gros lot, je veux bien une petite batterie neuve ! 🤣";
+  } else if (lowVal.includes('sécurité') || lowVal.includes('identité')) {
+    responseText = "🔒 Secret défense ! Je garde vos infos (DID, tickets) sous clé. Personne n'y touche, pas même mon créateur ! 🕵️‍♀️";
+  } else if (lowVal.includes('vendeur') || lowVal.includes('boutique') || lowVal.includes('resto')) {
+    responseText = "🏪 Futur magnat du Palace ? Créez votre boutique, mettez vos produits et hop ! 4% de frais pour nous aider à rester la meilleure App du monde. Deal ? ✨";
+  } else if (lowVal.includes('qui es-tu') || lowVal.includes('ema')) {
+    responseText = "👑 Je suis Ema, votre assistante préférée ! Je connais le Palace mieux que ma poche (si j'en avais une). Je suis là pour vous guider et vous faire sourire ! 🌸";
+  } else if (lowVal.includes('paiement') || lowVal.includes('wallet') || lowVal.includes('portefeuille')) {
+    responseText = "💳 Le portefeuille Delta est votre coffre-fort ! Vous y gérez vos DTC, USDT et ICP. Tout est sécurisé par la blockchain, même moi je n'y touche pas ! 💎";
+  } else {
+    responseText = "Mmmh, je n'ai pas tout saisi, mais sachez que je connais tout sur les commandes, les paiements Delta et le Jackpot ! Posez-moi une question plus précise, je suis toute ouïe ! 📖✨";
+  }
+
+  await delay(1500);
+  const typing = document.getElementById('ema-typing');
+  if (typing) {
+    typing.id = '';
+    typing.innerHTML = `<div class="ema-bubble">${responseText} <button onclick="speakEma('${responseText.replace(/'/g, "\\'")}')" style="background:none; border:none; cursor:pointer">🔊</button></div>`;
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+  speakEma(responseText);
+}
+
+function speakEma(text) {
+  try {
+    if ('speechSynthesis' in window) {
+      // Annuler toute lecture en cours
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'fr-FR';
+      utterance.pitch = 1.2;
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    } else {
+      console.warn("SpeechSynthesis not supported");
+    }
+  } catch (e) {
+    console.error("Speech error:", e);
+  }
+}
+
+// ─── JACKPOT ───
+function startJackpotCountdown() {
+  function getNextSunday20h() {
+    const now = new Date();
+    const utc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds()));
+    const dayOfWeek = utc.getUTCDay(); // 0=Sun
+    let daysUntil = (7 - dayOfWeek) % 7;
+    if (daysUntil === 0 && utc.getUTCHours() >= 20) daysUntil = 7;
+    const next = new Date(Date.UTC(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate() + daysUntil, 20, 0, 0));
+    return next;
+  }
+
+  function update() {
+    const now = new Date();
+    const target = getNextSunday20h();
+    const diff = Math.max(0, target - now);
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    const fmt = n => String(n).padStart(2,'0');
+    ['jp-days','jp-hours','jp-mins','jp-secs'].forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = fmt([d,h,m,s][i]);
+    });
+    const homeEl = document.getElementById('home-countdown');
+    if (homeEl) homeEl.textContent = `${fmt(d)}j ${fmt(h)}h`;
+  }
+  update();
+  jackpotInterval = setInterval(update, 1000);
+}
+
+async function watchAd() {
+  if (window.delta) {
+    window.delta.showAd("REWARDED_VIDEO_KEY", {
+      onShow() { showToast('Pub en cours...', 'info'); },
+      onClose() { rewardUser(); },
+      onError(err) { 
+        console.error(err);
+        showToast("Erreur pub: " + err, "error");
+      }
+    });
+  } else {
+    showToast('Simulation de pub...', 'info');
+    await delay(1500);
+    rewardUser();
+  }
+}
+
+async function rewardUser() {
+  App.tickets++;
+  if (App.user) App.user.dtc_balance = parseFloat(((App.user.dtc_balance || 0) + 0.01).toFixed(4));
+
+  // Mettre à jour l'UI
+  document.getElementById('ticket-count').textContent = `${App.tickets} tickets`;
+  const jpEl = document.querySelector('.jackpot-tickets');
+  if (jpEl) jpEl.textContent = `🎟 ${App.tickets} tickets`;
+  showToast(`+1 Ticket 🎟 · +0.01 USDT en DTC gagné !`, 'success');
+
+  // Sauvegarder dans Supabase ET localStorage (double sécurité)
+  localStorage.setItem('palace_tickets', App.tickets);
+  localStorage.setItem('palace_dtc', App.user?.dtc_balance || 0);
+  if (App.user?.did) {
+    await PalaceDB.recordAdView(App.user.did).catch(() => {});
+  }
+}
+
+function participateJackpot() {
+  if (App.tickets <= 0) { showToast('Vous n\'avez pas de tickets ! Regardez des pubs.', 'error'); return; }
+  if (!confirm(`Utiliser 1 ticket pour participer au tirage ?\nIl vous restera ${App.tickets - 1} ticket(s).`)) return;
+  App.tickets--;
+  document.getElementById('ticket-count').textContent = `${App.tickets} tickets`;
+  showToast('🎰 Participation enregistrée ! Rendez-vous dimanche à 20h GMT.', 'success');
+}
+
+// ─── SELLER ───
+function showSellerDashboard() {
+  if (!App.sellerConfig) {
+    showScreen('screen-seller-setup');
+  } else {
+    showScreen('screen-seller');
+    renderSellerDashboard();
+  }
+}
+
+function setupSeller(type) {
+  App.sellerType = type;
+  document.getElementById('seller-form').style.display = 'block';
+  document.getElementById('seller-form-title').textContent = type === 'restaurant' ? 'DÉTAILS DU RESTAURANT' : 'DÉTAILS DE LA BOUTIQUE';
+  document.getElementById('seller-specialty').placeholder = App.sellerType === 'restaurant' ? 'Spécialité (ex: Italienne, Africaine)' : 'Spécialité (ex: Mode, Électronique)';
+}
+
+async function saveSellerConfig() {
+  const name = document.getElementById('seller-name').value.trim();
+  if (!name) return showToast("Veuillez entrer un nom", "error");
+
+  showToast("Ouverture en cours…", "info");
+
+  // ── Upload du logo si fourni ────────────────────────────────────────────
+  let logoUrl = null;
+  const logoInput = document.getElementById('seller-logo-file');
+  if (logoInput && logoInput.files && logoInput.files[0]) {
+    const file     = logoInput.files[0];
+    const ext      = file.name.split('.').pop();
+    const filePath = `stores/${App.user.did}_${Date.now()}.${ext}`;
+    try {
+      const { data: uploadData, error: uploadError } = await window._supabase
+        .storage.from('logos')
+        .upload(filePath, file, { upsert: true, contentType: file.type });
+      if (!uploadError && uploadData) {
+        const { data: urlData } = window._supabase
+          .storage.from('logos')
+          .getPublicUrl(filePath);
+        logoUrl = urlData?.publicUrl || null;
+      } else {
+        console.warn('[saveSellerConfig] logo upload:', uploadError);
+      }
+    } catch(e) {
+      console.warn('[saveSellerConfig] logo upload error:', e);
+    }
+  }
+
+  // ── Vérification sécurité ─────────────────────────────────────────────────
+  // supabase_id est l'UUID de la session anonyme Supabase liée au DID Delta.
+  // Il est REQUIS pour que RLS fonctionne (auth.uid() = user_id).
+  // Si absent → "Anonymous sign-ins" n'est pas activé dans Supabase Dashboard.
+  const supabaseId = App.user?.supabase_id || null;
+
+  if (!supabaseId) {
+    showToast("⚠️ Activation requise : Supabase Dashboard → Authentication → Providers → Anonymous → Enable", "error");
+    console.error(
+      '[saveSellerConfig] supabase_id manquant.\n' +
+      '→ Supabase Dashboard → Authentication → Providers → Anonymous → activer\n' +
+      '→ Sans ça, RLS bloque les writes et n\'importe qui pourrait modifier les stores.'
+    );
+    return;
+  }
+
+  // ── Construction storeData sécurisée ─────────────────────────────────────
+  // seller_did  = DID Delta signé cryptographiquement (identifiant métier)
+  // user_id     = UUID Supabase Auth (pour RLS auth.uid() = user_id)
+  // Ces deux champs ensemble garantissent qu'un vendeur ne peut créer/modifier
+  // QUE son propre store, même avec la clé anon visible dans le code source.
+  const storeData = {
+    seller_did:  App.user.did,
+    user_id:     supabaseId,
+    store_type:  App.sellerType || 'boutique',
+    name:        sanitize(name),
+    description: sanitize(document.getElementById('seller-desc').value    || ''),
+    location:    sanitize(document.getElementById('seller-loc').value     || ''),
+    city:        sanitize(document.getElementById('seller-loc').value     || ''),
+    gps:         document.getElementById('seller-gps').value              || null,
+    specialty:   sanitize(document.getElementById('seller-specialty').value || ''),
+    wallet:      document.getElementById('seller-wallet').value           || null,
+    logo_url:    logoUrl,
+    is_open:     true,
+  };
+
+  try {
+    // On tente d'abord un UPDATE (store existant)
+    const existing = await DB.get('stores', '?seller_did=eq.' + encodeURIComponent(App.user.did) + '&limit=1');
+
+    let savedStore = null;
+    let saveError  = null;
+
+    if (existing && existing.length > 0) {
+      // Mise à jour — user_id non modifiable après création (sécurité)
+      const { user_id: _uid, seller_did: _did, ...updateData } = storeData;
+      const updated = await DB.patch('stores', '?seller_did=eq.' + encodeURIComponent(App.user.did), updateData);
+      if (!updated) saveError = 'patch failed';
+      else savedStore = Array.isArray(updated) ? updated[0] : updated;
+    } else {
+      // Création d'un nouveau store
+      const created = await DB.post('stores', storeData);
+      if (!created) saveError = 'insert failed';
+      else savedStore = Array.isArray(created) ? created[0] : created;
+    }
+
+    if (saveError) {
+      console.error('[saveSellerConfig] DB error:', saveError);
+      showToast("Erreur lors de l'enregistrement — vérifiez la connexion", "error");
+      return;
+    }
+
+    App.sellerConfig = {
+      store_type: App.sellerType,
+      name,
+      desc:      storeData.description,
+      loc:       storeData.location,
+      gps:       storeData.gps,
+      specialty: storeData.specialty,
+      wallet:    storeData.wallet,
+      logo_url:  logoUrl,
+      isOpen:    true,
+      db_id:     savedStore?.id,
+    };
+
+    cacheInvalidate('restaurants');
+    showToast("Établissement ouvert avec succès ! 🚀", "success");
+    showSellerDashboard();
+  } catch(e) {
+    console.error('[saveSellerConfig]', e);
+    showToast("Erreur réseau", "error");
+  }
+}
+
+async function renderSellerDashboard() {
+  const config = App.sellerConfig;
+  document.getElementById('seller-dash-name').textContent = config.name;
+  const storeType = config.store_type || config.type || 'boutique';
+  document.getElementById('seller-items-title').textContent = storeType === 'restaurant' ? '📋 GESTION DU MENU' : '📦 GESTION DES PRODUITS';
+
+  // ── Affichage logo / icône ────────────────────────────────────────────────
+  const iconEl = document.getElementById('seller-dash-icon');
+  if (iconEl) {
+    if (config.logo_url) {
+      iconEl.innerHTML = `<img src="${sanitize(config.logo_url)}"
+        style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)"
+        onerror="this.parentNode.textContent='${storeType === 'restaurant' ? '🍽' : '🏪'}'">`;
+    } else {
+      iconEl.textContent = storeType === 'restaurant' ? '🍽' : '🏪';
+    }
+  }
+
+  // ── Statistiques réelles depuis Supabase ──
+  try {
+    const sellerDid = App.user?.did;
+    if (sellerDid) {
+      const sellerOrders = await DB.get(
+        'orders',
+        '?seller_did=eq.' + encodeURIComponent(sellerDid) +
+        '&select=total_dtc,status,created_at'
+      );
+      if (sellerOrders && sellerOrders.length > 0) {
+        const totalRevenue = sellerOrders.reduce((sum, o) => sum + parseFloat(o.total_dtc || 0), 0);
+        document.getElementById('stat-revenues').textContent = totalRevenue.toFixed(2);
+        document.getElementById('stat-orders').textContent   = sellerOrders.length;
+      } else {
+        document.getElementById('stat-revenues').textContent = "0.00";
+        document.getElementById('stat-orders').textContent   = "0";
+      }
+    } else {
+      document.getElementById('stat-revenues').textContent = "0.00";
+      document.getElementById('stat-orders').textContent   = "0";
+    }
+  } catch(e) {
+    console.error('[renderSellerDashboard] Stats:', e);
+    document.getElementById('stat-revenues').textContent = "—";
+    document.getElementById('stat-orders').textContent   = "—";
+  }
+
+  await renderSellerItems();
+  filterSellerOrders('new');
+}
+
+function toggleStoreStatus() {
+  App.sellerConfig.isOpen = !App.sellerConfig.isOpen;
+  const btn = document.getElementById('btn-toggle-store');
+  btn.textContent = App.sellerConfig.isOpen ? "🟢 Ouvert" : "🔴 Fermé";
+  btn.classList.toggle('active', App.sellerConfig.isOpen);
+  showToast(App.sellerConfig.isOpen ? "Boutique ouverte" : "Boutique fermée", "info");
+}
+
+function showAddProduct() {
+  const type = App.sellerConfig.store_type || App.sellerConfig.type || 'boutique';
+  document.getElementById('add-item-title').textContent = type === 'restaurant' ? "Ajouter un plat" : "Ajouter un produit";
+  document.getElementById('restaurant-only').style.display = type === 'restaurant' ? 'block' : 'none';
+  document.getElementById('boutique-only').style.display = type === 'boutique' ? 'block' : 'none';
+  
+  const catSelect = document.getElementById('new-item-cat');
+  const cats = type === 'restaurant' 
+    ? ['Pizza', 'Salade', 'Pâtes', 'Entrées', 'Glaces', 'Plats locaux', 'Accompagnement', 'Snacks', 'Boissons', 'Végétariens/Vegan', 'Catégorie Personnalisée']
+    : ['Mode', 'Électronique', 'Appareils électroménagers', 'Informatique', 'Voiture', 'Catégorie Personnalisée'];
+  
+  catSelect.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  openModal('modal-add-product');
+}
+
+function convertPrice(val) {
+  const dtcPrice = (val / 650).toFixed(2);
+  document.getElementById('converted-price').textContent = `${dtcPrice} DTC`;
+}
+
+// ─── SANITIZER ANTI-XSS ──────────────────────────────────────────────────────
+// Échappe les caractères HTML dangereux dans les données utilisateur
+function sanitize(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
+async function saveNewItem() {
+  const name     = document.getElementById('new-item-name').value.trim();
+  const priceRaw = parseFloat(document.getElementById('new-item-price').value || 0);
+  const emoji    = document.getElementById('new-item-emoji')?.value?.trim() || '🛍';
+  const desc     = document.getElementById('new-item-desc')?.value?.trim()  || '';
+  const cat      = document.getElementById('new-item-cat')?.value           || 'Autre';
+
+  // ── Validations ──────────────────────────────────────────────────────────
+  if (!name || name.length < 2) {
+    return showToast("Le nom doit contenir au moins 2 caractères", "error");
+  }
+  if (name.length > 100) {
+    return showToast("Le nom ne peut pas dépasser 100 caractères", "error");
+  }
+  if (isNaN(priceRaw) || priceRaw <= 0) {
+    return showToast("Le prix doit être un nombre positif", "error");
+  }
+  if (priceRaw > 10_000_000) {
+    return showToast("Prix trop élevé", "error");
+  }
+  if (desc.length > 500) {
+    return showToast("La description ne peut pas dépasser 500 caractères", "error");
+  }
+  if (!App.user?.did) {
+    return showToast("Vous devez être connecté pour ajouter un article", "error");
+  }
+
+  // ── Upload des images si fournies ────────────────────────────────────────
+  let imageUrls = [];
+  const imageInput = document.getElementById('new-item-images');
+  if (imageInput && imageInput.files && imageInput.files.length > 0) {
+    const files = Array.from(imageInput.files).slice(0, 5);
+    for (const file of files) {
+      const ext      = file.name.split('.').pop();
+      const filePath = `products/${App.user.did}_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+      try {
+        const { data: up, error: upErr } = await window._supabase
+          .storage.from('products')
+          .upload(filePath, file, { upsert: true, contentType: file.type });
+        if (!upErr && up) {
+          const { data: urlData } = window._supabase.storage.from('products').getPublicUrl(filePath);
+          if (urlData?.publicUrl) imageUrls.push(urlData.publicUrl);
+        }
+      } catch(e) { console.warn('[saveNewItem] image upload:', e); }
+    }
+  }
+
+  const priceDtc = parseFloat((priceRaw / CONFIG.DTC_TO_FCFA).toFixed(4));
+
+  // ── Sanitize anti-XSS avant envoi en DB ──────────────────────────────────
+  const newProduct = {
+    name:        sanitize(name),
+    emoji:       sanitize(emoji).slice(0, 8),
+    description: sanitize(desc),
+    price_dtc:   priceDtc,
+    price_fcfa:  priceRaw,
+    category:    sanitize(cat),
+    store_name:  sanitize(App.sellerConfig?.name || 'Boutique Palace'),
+    seller_did:  App.user.did,
+    available:   true,
+    type:        App.sellerConfig?.store_type || App.sellerConfig?.type || 'boutique',
+    image_url:   imageUrls[0]   || null,     // image principale
+    images:      imageUrls.length > 0 ? JSON.stringify(imageUrls) : null,
+  };
+
+  try {
+    const saved = await DB.post('products', newProduct);
+    if (saved) {
+      cacheInvalidate('products');  // invalider le cache produits
+      const p = Array.isArray(saved) ? saved[0] : saved;
+      PRODUCTS.unshift({
+        id:        p.id,
+        name:      p.name,
+        emoji:     p.emoji      || '🛍',
+        price:     priceDtc,
+        fcfa:      priceRaw,
+        store:     p.store_name || App.sellerConfig?.name || 'Boutique Palace',
+        location:  p.location   || 'Abidjan',
+        distance:  '',
+        time:      '',
+        desc:      p.description || '',
+        seller_did: p.seller_did,
+        category:  p.category   || cat,
+        available: true,
+      });
+      showToast("Article ajouté avec succès !", "success");
+    } else {
+      showToast("Erreur lors de l'ajout — vérifiez la connexion", "error");
+    }
+  } catch(e) {
+    console.error('[saveNewItem]', e);
+    showToast("Erreur réseau lors de l'ajout", "error");
+  }
+
+  closeModal('modal-add-product');
+  await renderSellerItems();
+}
+
+async function renderSellerItems() {
+  const grid = document.getElementById('seller-items-grid');
+  if (!grid) return;
+
+  let items = [];
+  try {
+    const sellerDid = App.user?.did;
+    if (sellerDid) {
+      const dbItems = await DB.get(
+        'products',
+        '?seller_did=eq.' + encodeURIComponent(sellerDid) + '&order=created_at.desc'
+      );
+      if (dbItems && dbItems.length > 0) {
+        items = dbItems.map(p => ({
+          id:        p.id,
+          name:      p.name || 'Article',
+          emoji:     p.emoji || '🛍',
+          price:     parseFloat(p.price_dtc || p.price || 0),
+          fcfa:      parseInt(p.price_fcfa || Math.round((p.price_dtc||0) * CONFIG.DTC_TO_FCFA)),
+          available: p.available !== false,
+          store:     p.store_name || App.sellerConfig?.name || 'Boutique',
+          seller_did: p.seller_did,
+        }));
+      }
+    }
+  } catch(e) {
+    console.error('[renderSellerItems]', e);
+  }
+
+  const avail = items.filter(p => p.available);
+  const outStock = items.filter(p => !p.available);
+
+  document.getElementById('total-items').textContent  = items.length;
+  document.getElementById('avail-items').textContent  = avail.length;
+  document.getElementById('out-items').textContent    = outStock.length;
+
+  if (items.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text3);font-size:13px">Aucun article pour le moment.<br>Cliquez sur "+ Nouveau" pour ajouter.</div>`;
+    return;
+  }
+
+  grid.innerHTML = items.map(p => {
+    const imgHtml = p.image_url
+      ? `<img src="${sanitize(p.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:14px 14px 0 0" onerror="this.parentNode.textContent='${sanitize(p.emoji || '🛍')}'">` 
+      : (p.emoji || '🛍');
+    return `
+    <div class="prod-card" style="${!p.available ? 'opacity:0.5' : ''}">
+      <div class="prod-img" style="overflow:hidden; background:var(--surface2)">${imgHtml}</div>
+      <div class="prod-body">
+        <div class="prod-name">${sanitize(p.name)}</div>
+        <div class="prod-price">${p.price} DTC</div>
+        <div style="font-size:11px;color:var(--text3)">${(p.fcfa||0).toLocaleString()} FCFA</div>
+        <div style="display:flex; gap:5px; margin-top:8px">
+          <button class="cat-chip" style="padding:4px 8px; font-size:10px" onclick="editSellerItem('${p.id}')">Modifier</button>
+          <button class="cat-chip" style="padding:4px 8px; font-size:10px; color:${p.available ? 'var(--red)' : '#2ECC71'}" onclick="toggleItemRupture('${p.id}', ${!p.available})">${p.available ? 'Rupture' : 'Remettre'}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function editSellerItem(id) {
+  // Chercher dans la liste globale puis en DB si nécessaire
+  let p = PRODUCTS.find(x => String(x.id) === String(id));
+  if (!p) {
+    const rows = await DB.get('products', '?id=eq.' + encodeURIComponent(id) + '&limit=1');
+    if (rows && rows[0]) {
+      p = { id: rows[0].id, name: rows[0].name, price: parseFloat(rows[0].price_dtc || rows[0].price || 0) };
+    }
+  }
+  if (!p) return showToast("Produit introuvable", "error");
+
+  document.getElementById('add-item-title').textContent = "Modifier l'article";
+  document.getElementById('new-item-name').value  = p.name;
+  document.getElementById('new-item-price').value = Math.round(p.price * CONFIG.DTC_TO_FCFA);
+  convertPrice(Math.round(p.price * CONFIG.DTC_TO_FCFA));
+
+  openModal('modal-add-product');
+  showToast("Mode modification activé", "info");
+}
+
+async function toggleItemRupture(id, newAvailable = false) {
+  try {
+    const res = await DB.patch('products', '?id=eq.' + encodeURIComponent(id), { available: newAvailable });
+    if (res) {
+      showToast(newAvailable ? "Article remis en stock ✓" : "Article marqué en rupture de stock", "info");
+    } else {
+      showToast("Erreur de mise à jour", "error");
+    }
+  } catch(e) {
+    console.error('[toggleItemRupture]', e);
+    showToast("Erreur réseau", "error");
+  }
+  await renderSellerItems();
+}
+
+// Cache local des commandes vendeur (rechargé à chaque filtre)
+let SELLER_ORDERS_CACHE = [];
+
+async function filterSellerOrders(status) {
+  const list = document.getElementById('seller-orders-list');
+  if (!list) return;
+
+  list.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Chargement…</div>`;
+
+  try {
+    const sellerDid = App.user?.did;
+    if (sellerDid) {
+      // Mapper les onglets UI vers les statuts DB
+      const statusMap = { new:'pending', prep:'confirmed', ready:'ready', cancelled:'cancelled' };
+      const dbStatus = statusMap[status] || status;
+      const rows = await DB.get(
+        'orders',
+        '?seller_did=eq.' + encodeURIComponent(sellerDid) +
+        '&status=eq.' + encodeURIComponent(dbStatus) +
+        '&order=created_at.desc&limit=50'
+      );
+      SELLER_ORDERS_CACHE = rows || [];
+    }
+  } catch(e) {
+    console.error('[filterSellerOrders]', e);
+    SELLER_ORDERS_CACHE = [];
+  }
+
+  if (SELLER_ORDERS_CACHE.length === 0) {
+    list.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text3); font-size:14px">Aucune commande dans cette section</div>`;
+    return;
+  }
+
+  list.innerHTML = SELLER_ORDERS_CACHE.map(o => {
+    const ref   = o.order_ref || ('PM-' + String(o.id).slice(-4));
+    const items = o.items_summary || 'Commande';
+    const total = (o.total_dtc || 0) + ' DTC';
+    const time  = o.created_at ? new Date(o.created_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
+    return `
+    <div class="order-card" style="margin:10px 0; background:var(--surface2)">
+      <div style="display:flex; justify-content:space-between">
+        <div style="font-weight:600; color:var(--gold)">#${ref}</div>
+        <div style="font-size:11px; color:var(--text3)">${time}</div>
+      </div>
+      <div style="font-size:13px; margin:8px 0">${items}</div>
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <div style="font-weight:700">${total}</div>
+        <div style="display:flex; gap:8px">
+          ${status === 'new' ? `
+            <button class="cat-chip" style="background:var(--gold); color:#000" onclick="updateOrderStatus('${o.id}', 'confirmed')">Accepter</button>
+            <button class="cat-chip" style="color:var(--red)" onclick="updateOrderStatus('${o.id}', 'cancelled')">Refuser</button>
+          ` : status === 'prep' ? `
+            <button class="cat-chip" style="background:var(--gold); color:#000" onclick="updateOrderStatus('${o.id}', 'ready')">Marquer Prête</button>
+          ` : `
+            <span style="font-size:12px; color:var(--gold)">Prêt pour livraison</span>
+          `}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateOrderTab(el, status) {
+  document.querySelectorAll('.order-tabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  filterSellerOrders(status);
+}
+
+async function updateOrderStatus(id, newStatus) {
+  try {
+    const res = await DB.patch('orders', '?id=eq.' + encodeURIComponent(id), { status: newStatus });
+    if (res) {
+      showToast(
+        newStatus === 'confirmed' ? "Commande acceptée et mise en préparation" :
+        newStatus === 'ready'     ? "Commande marquée comme prête" :
+        newStatus === 'cancelled' ? "Commande refusée" : "Statut mis à jour", "success"
+      );
+    } else {
+      showToast("Erreur de mise à jour", "error");
+    }
+  } catch(e) {
+    console.error('[updateOrderStatus]', e);
+    showToast("Erreur réseau", "error");
+  }
+
+  // Rafraîchir l'onglet actif
+  const currentTab = document.querySelector('.order-tabs .tab.active');
+  const tabStatus = currentTab
+    ? (currentTab.getAttribute('onclick').match(/'([^']+)'/g)||[]).pop()?.replace(/'/g,'') || 'new'
+    : 'new';
+  filterSellerOrders(tabStatus);
+  renderSellerDashboard();
+}
+
+function showDeliveryDashboard() {
+  showScreen('screen-delivery');
+  renderDeliveryRequests();
+}
+
+function renderDeliveryRequests() {
+  const list = document.getElementById('delivery-requests');
+  const reqs = [
+    { id: 'DEL-101', type: 'Repas', from: 'Le Sénégalais (Plateau)', to: 'Cocody Ambassade', fee: '1.5 DTC' },
+    { id: 'DEL-102', type: 'Produit', from: 'TechAfrique (Adjamé)', to: 'Marcory Zone 4', fee: '2.2 DTC' }
+  ];
+  
+  list.innerHTML = reqs.map(r => `
+    <div class="role-card" style="margin-bottom:12px" onclick="acceptDelivery('${r.id}')">
+      <div class="role-icon">${r.type === 'Repas' ? '🍱' : '📦'}</div>
+      <div class="role-info">
+        <h3>${r.type} • ${r.fee}</h3>
+        <p>De: ${r.from}</p>
+        <p>À: ${r.to}</p>
+      </div>
+      <div class="role-arrow">›</div>
+    </div>
+  `).join('');
+}
+
+function acceptDelivery(id) {
+  if (confirm("Accepter cette livraison ?")) {
+    showToast("Livraison acceptée ! Suivez l'itinéraire.", "success");
+    document.getElementById('active-delivery').style.display = 'block';
+    document.getElementById('delivery-details').innerHTML = `
+      <strong>Commande #${id}</strong><br>
+      📍 Départ: Le Sénégalais, Rue 12, Plateau<br>
+      🏁 Arrivée: Résidence Onyx, Cocody<br>
+      📞 Contact Client: +225 0707...
+    `;
+    // Notification à l'acheteur
+    showToast("L'acheteur a été notifié de votre prise en charge", "info");
+  }
+}
+
+function toggleGPS() {
+  showToast("Traçabilité GPS activée 🛰", "info");
+}
+
+// ─── DELIVERY CODE ───
+function showDeliveryCode() {
+  const code = Math.random().toString(36).substring(2,6).toUpperCase();
+  document.getElementById('delivery-code').textContent = code;
+  openModal('modal-code');
+}
+
+// ─── LANGUAGE ───
+async function changeLanguage() {
+  try {
+    if (window.delta) {
+      const code = await window.delta.languageCode();
+      showToast(`Langue: ${code}`, 'info');
+    } else {
+      showToast('Langue: Français (fr)', 'info');
+    }
+  } catch(e) { showToast('Langue: Français', 'info'); }
+}
+
+// ─── LOGOUT ───
+function logout() {
+  if (!confirm("Voulez-vous vous déconnecter ?")) return;
+  App.user = null;
+  App.role = 'buyer';
+  localStorage.removeItem('identToken');
+  localStorage.removeItem('palace_user_role');
+  document.getElementById('ema-fab').classList.add('hidden');
+  showScreen('screen-auth');
+  showToast('Déconnexion réussie', 'info');
+}
+
+// ─── MODAL ───
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function closeAllModals() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+}
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ─── TOAST ───
+let toastTimeout;
+function showToast(msg, type='info') {
+  if (window.delta) {
+    window.delta.toast(msg);
+  } else {
+    const t = document.getElementById('toast');
+    if (t) {
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+  }
+}
+
+// ─── CHARGEMENT DES RESTAURANTS RÉELS (Food Palace) ─────────────────────────
+async function loadRestaurants() {
+  const container = document.getElementById('restaurants-list');
+  if (!container) return;
+
+  const cached = cacheGet('restaurants');
+  if (cached) { renderRestaurants(cached); return; }
+
+  try {
+    const { data, error } = await window._supabase
+      .from('stores')
+      .select('*')
+      .eq('store_type', 'restaurant')
+      .eq('is_open', true)
+      .order('created_at', { ascending: false });
+
+    if (error) { console.error('[loadRestaurants]', error); return; }
+    const restaurants = data || [];
+    cacheSet('restaurants', restaurants);
+    renderRestaurants(restaurants);
+  } catch(e) {
+    console.error('[loadRestaurants]', e);
+  }
+}
+
+function renderRestaurants(restaurants) {
+  const container = document.getElementById('restaurants-list');
+  if (!container) return;
+
+  if (!restaurants || restaurants.length === 0) {
+    container.innerHTML = `
+      <div style="padding:30px 20px; color:var(--text3); font-size:13px; text-align:center; width:100%">
+        <div style="font-size:32px; margin-bottom:8px">🍽</div>
+        Aucun restaurant disponible pour le moment
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = restaurants.map(r => {
+    const logoHtml = r.logo_url
+      ? `<img src="${sanitize(r.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:14px" onerror="this.parentNode.textContent='🍽'">`
+      : (r.emoji || '🍽');
+    const badge = r.is_new ? 'Nouveau' : (r.order_count > 50 ? 'Populaire' : '');
+    return `
+      <div class="rest-card" onclick="openRestaurant('${sanitize(r.id)}', '${sanitize(r.name)}')">
+        <div class="rest-img" style="overflow:hidden">${logoHtml}</div>
+        <div class="rest-body">
+          <div class="rest-name">${sanitize(r.name)}</div>
+          <div class="rest-meta">
+            <span class="rest-rating">★ ${r.rating || '5.0'}</span>
+            ${r.delivery_time ? ' · ' + sanitize(r.delivery_time) + ' min' : ''}
+          </div>
+          ${badge ? `<div style="margin-top:6px"><span class="rest-badge">${badge}</span></div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─── PREVIEW LOGO VENDEUR ─────────────────────────────────────────────────────
+function previewSellerLogo(input) {
+  const preview = document.getElementById('seller-logo-preview');
+  const img     = document.getElementById('seller-logo-img');
+  if (!input.files || !input.files[0] || !preview || !img) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    img.src = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+// ─── PREVIEW IMAGES PRODUIT/PLAT ─────────────────────────────────────────────
+function previewItemImages(input) {
+  const previewDiv = document.getElementById('item-images-preview');
+  if (!previewDiv || !input.files) return;
+  previewDiv.innerHTML = '';
+  const files = Array.from(input.files).slice(0, 5);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.src   = e.target.result;
+      img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--border)';
+      previewDiv.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Évite les requêtes répétées à chaque navigation.
+// Invalidé explicitement lors d'une modification (ex: nouvel article, nouvelle commande).
+const _cache = {};
+const CACHE_TTL = 60_000; // 1 minute
+
+function cacheGet(key) {
+  const entry = _cache[key];
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) { delete _cache[key]; return null; }
+  return entry.data;
+}
+function cacheSet(key, data) {
+  _cache[key] = { data, ts: Date.now() };
+}
+function cacheInvalidate(prefix) {
+  Object.keys(_cache).forEach(k => { if (k.startsWith(prefix)) delete _cache[k]; });
+}
+
+// ─── CHARGEMENT DES ADRESSES UTILISATEUR ─────────────────────────────────────
+async function loadUserAddresses() {
+  const did = App.user?.did;
+  if (!did) return;
+
+  const cacheKey = 'addresses:' + did;
+  const cached = cacheGet(cacheKey);
+  if (cached) { App.addresses = cached; renderAddresses(); return; }
+
+  try {
+    const { data, error } = await window._supabase
+      .from('addresses')
+      .select('*')
+      .eq('user_did', did)
+      .order('is_default', { ascending: false });
+
+    if (error) { console.error('[loadUserAddresses]', error); return; }
+    App.addresses = data || [];
+    cacheSet(cacheKey, App.addresses);
+    renderAddresses();
+  } catch(e) {
+    console.error('[loadUserAddresses]', e);
+  }
+}
+
+// ─── CHARGEMENT DES GAGNANTS JACKPOT ─────────────────────────────────────────
+async function loadJackpotWinners() {
+  const container = document.getElementById('jackpot-winners-list');
+  if (!container) return;
+
+  const cached = cacheGet('jackpot-winners');
+  if (cached) { renderJackpotWinners(cached); return; }
+
+  try {
+    const { data, error } = await window._supabase
+      .from('jackpot_winners')
+      .select('nickname, did, prize_amount, prize_coin, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (error) { console.error('[loadJackpotWinners]', error); return; }
+    const winners = data || [];
+    cacheSet('jackpot-winners', winners);
+    renderJackpotWinners(winners);
+  } catch(e) {
+    console.error('[loadJackpotWinners]', e);
+  }
+}
+
+function renderJackpotWinners(winners) {
+  const container = document.getElementById('jackpot-winners-list');
+  if (!container) return;
+  const medals = ['🥇','🥈','🥉','🏅','🏅'];
+  if (!winners || winners.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px">Aucun gagnant pour le moment</div>`;
+    return;
+  }
+  container.innerHTML = winners.map((w, i) => `
+    <div class="jp-winner-item">
+      <div class="jp-winner-rank">${medals[i] || '🏅'}</div>
+      <div class="jp-winner-info">
+        <div class="jp-winner-name">${sanitize(w.nickname || 'Anonyme')}</div>
+        <div class="jp-winner-did">${sanitize((w.did || '').slice(0,18))}***</div>
+      </div>
+      <div class="jp-winner-prize">${w.prize_amount || 0} ${sanitize(w.prize_coin || 'USDT')}</div>
+    </div>`).join('');
+}
+
+// ─── EDGE FUNCTION : update-balance ─────────────────────────────────────────
+// Appelle la fonction sécurisée Supabase pour modifier le solde DTC.
+// Le backend vérifie l'identité et empêche toute falsification côté client.
+async function updateBalance(amount) {
+  try {
+    const { data, error } = await window._supabase.functions.invoke('update-balance', {
+      body: { amount: Number(amount) }
+    });
+    if (error) {
+      console.error('[updateBalance] Edge Function error:', error);
+      return null;
+    }
+    // Mettre à jour le solde local si succès
+    if (data?.success && App.user) {
+      App.user.dtc_balance = data.balance;
+      updateUserUI();
+    }
+    return data;
+  } catch(e) {
+    console.error('[updateBalance]', e);
+    return null;
+  }
+}
+
+// ─── LECTURE DONNÉES UTILISATEUR (SDK) ──────────────────────────────────────
+async function fetchUserData() {
+  const did = App.user?.did || CURRENT_USER?.did;
+  if (!did) return null;
+  try {
+    const { data, error } = await window._supabase
+      .from('users')
+      .select('*')
+      .eq('did', did)
+      .maybeSingle();
+    if (error) { console.error('[fetchUserData]', error); return null; }
+    return data;
+  } catch(e) {
+    console.error('[fetchUserData]', e);
+    return null;
+  }
+}
+
+// ─── UTILS ───
+// ⚠️  RAPPEL SÉCURITÉ — À configurer dans Supabase Dashboard :
+//  1. Activer RLS sur : users, orders, products, messages, payments, ad_views
+//  2. Policy minimale users : USING (did = auth.jwt() ->> 'sub')
+//  3. Ne jamais envoyer tickets/dtc_balance depuis le client
+//  4. Vérifier chaque paiement Delta côté backend (tx_hash, amount, receiver)
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── WALLET DÉPÔT ────────────────────────────────────────────────────────────
+// Ouvre le portefeuille Delta réel pour effectuer un dépôt.
+// Fallback : affiche un toast informatif si le SDK n'est pas disponible.
+async function openWalletDeposit() {
+  if (window.delta && typeof window.delta.openWallet === 'function') {
+    try {
+      await window.delta.openWallet();
+    } catch(e) {
+      console.error('[openWalletDeposit]', e);
+      showToast('Impossible d\'ouvrir le portefeuille', 'error');
+    }
+  } else {
+    // Hors Delta (navigateur de test)
+    showToast('Portefeuille Delta non disponible en mode test', 'info');
+  }
+}
+</script>
+
+<!-- ─── SUPABASE JS SDK v2 ──────────────────────────────────────────────────
+     Chargé en dernier pour ne pas bloquer le rendu.
+     Après initialisation, window._supabase est disponible pour testSupabase().
+─────────────────────────────────────────────────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ── Client Supabase SDK ──────────────────────────────────────────────────
+  // Utilise la clé anon (JWT) pour que les fonctions auth et RLS fonctionnent
+  const supabaseUrl = "https://onnzwrglpfkezuzimlba.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ubnp3cmdscGZrZXp1emltbGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMjgxMDAsImV4cCI6MjA5MzkwNDEwMH0.CANE5w3qyAlc-31Wf_B2OiOrWMV2ZHVTh_N6O3-fpPM";
+
+  window._supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+  // Test de connexion automatique au démarrage (résultat visible dans la console)
+  testSupabase();
+</script>
+</body>
+</html>

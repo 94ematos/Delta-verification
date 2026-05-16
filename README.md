@@ -1,233 +1,238 @@
-# 👑 PALACE MARKET — Documentation Technique
+# 👑 Palace Market
 
-> **Version:** 1.0.0 · **Mini-App Delta** · Web3 Marketplace
+> **Premium Marketplace Web3 · Delta Mini App**  
+> Achetez, vendez et livrez en crypto — directement depuis Delta.
+
+![Version](https://img.shields.io/badge/version-1.20-gold)
+![Platform](https://img.shields.io/badge/platform-Delta%20Mini%20App-black)
+![Stack](https://img.shields.io/badge/stack-HTML%20%7C%20Supabase%20%7C%20Delta%20SDK-blue)
+![License](https://img.shields.io/badge/license-Private-red)
 
 ---
 
-## 🚀 DÉPLOIEMENT DELTA
+## 📱 Aperçu
 
-### Structure du package
+Palace Market est une **mini application Delta** qui connecte acheteurs, vendeurs et livreurs au sein d'un écosystème marketplace premium. Les paiements s'effectuent en **DTC / USDT** via le wallet Delta, avec conversion automatique en FCFA.
+
+---
+
+## ✨ Fonctionnalités
+
+### 🛍 Acheteur
+- Marketplace produits avec filtres par catégorie
+- Food Palace — restaurants et commandes en ligne
+- Panier multi-vendeurs avec paiement Delta Wallet
+- Tracking commande en temps réel (4 étapes)
+- Historique des commandes
+- Messagerie avec vendeurs et livreurs
+- Gestion des adresses de livraison
+
+### 🏪 Vendeur
+- Création de restaurant (Food Palace) ou boutique (Marketplace)
+- Upload logo + photos produits/plats (Supabase Storage)
+- Dashboard avec statistiques revenus et commandes en temps réel
+- Gestion du catalogue (ajout, modification, rupture de stock)
+- Gestion des commandes entrantes (Accepter / Refuser / Prêt)
+
+### 🛵 Livreur
+- Dashboard des demandes de livraison
+- Gestion des courses en cours
+
+### 🎰 Palace Jackpot
+- Tirage hebdomadaire
+- Système de tickets de participation
+- Tableau des derniers gagnants (Supabase live)
+
+### 🤖 Assistant Ema
+- Assistant IA intégré avec humour
+
+---
+
+## 🏗 Architecture
+
 ```
 palace-market/
-├── index.html      ← Application complète (single-file)
-├── .version        ← Requis par Delta (contient: 1.0.0)
-└── README.md       ← Ce fichier
+├── index.html          # Application complète (single file)
+├── .version            # Numéro de version (ex: 1.20)
+└── supabase/
+    └── functions/
+        └── update-balance/
+            └── index.ts    # Edge Function sécurisée
 ```
 
-### Étapes de soumission
-1. Zipper le dossier `palace-market/`
-2. Aller dans le **Delta Developer Center**
-3. Créer une nouvelle app → **Type: Mini (Native)**
-4. Upload du package ZIP
-5. Tester en mode **Debug** avant publication
-6. Passer le statut → **Beta publique** → **Publié**
-
----
-
-## 🔐 AUTHENTIFICATION DELTA
-
-```javascript
-// Intégration complète dans l'app
-let res = await window.delta.authByIdentToken();
-localStorage.setItem("identToken", JSON.stringify(res));
-// DID récupéré: res.dAppIdentToken.did
-```
-
-**Mode dégradé:** Si `window.delta` n'est pas disponible (browser normal), l'app passe en mode démo automatiquement.
-
----
-
-## 💰 PAIEMENT (ESCROW)
-
-```javascript
-// Flux de paiement sécurisé
-await window.delta.walletPayment(
-  coinCode,         // 'USDT' | 'DTC' | 'ICP'
-  'palace-escrow-wallet',  // Adresse escrow Palace
-  amount,
-  'Palace Market Order'
-);
-```
-
-**Logique Escrow:**
-1. Acheteur paie → Fonds en escrow
-2. Commande = `pending`
-3. Vendeur prépare → Livreur livre
-4. Acheteur reçoit un **code 4 caractères** unique
-5. Livreur saisit le code → Paiement libéré au vendeur
-
----
-
-## 🎰 SYSTÈME JACKPOT
-
-- Tirage **chaque dimanche à 20h00 GMT**
-- Tickets gagnés via **publicités Delta** (`window.delta.showAd`)
-- Récompense par pub: **+1 Ticket** + **0.01 USDT en DTC**
-- Countdown en temps réel jusqu'au prochain tirage
-- Historique des gagnants précédents affiché
-
----
-
-## 🛠 BACKEND SUPABASE (À CONNECTER)
-
-### Tables à créer:
-```sql
--- Utilisateurs
-CREATE TABLE users (
-  id UUID PRIMARY KEY,
-  did TEXT UNIQUE NOT NULL,
-  nickname TEXT,
-  avatar_url TEXT,
-  role TEXT DEFAULT 'buyer',
-  tickets INTEGER DEFAULT 0,
-  dtc_balance DECIMAL DEFAULT 0,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Boutiques
-CREATE TABLE stores (
-  id UUID PRIMARY KEY,
-  owner_did TEXT REFERENCES users(did),
-  name TEXT NOT NULL,
-  category TEXT,
-  rating DECIMAL DEFAULT 0,
-  is_restaurant BOOLEAN DEFAULT false,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Produits
-CREATE TABLE products (
-  id UUID PRIMARY KEY,
-  store_id UUID REFERENCES stores(id),
-  name TEXT NOT NULL,
-  description TEXT,
-  price_dtc DECIMAL NOT NULL,
-  price_fcfa INTEGER,
-  emoji TEXT,
-  category TEXT,
-  stock INTEGER DEFAULT 0,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Commandes
-CREATE TABLE orders (
-  id UUID PRIMARY KEY,
-  buyer_did TEXT REFERENCES users(did),
-  seller_did TEXT REFERENCES users(did),
-  delivery_did TEXT REFERENCES users(did),
-  items JSONB NOT NULL,
-  total_amount DECIMAL NOT NULL,
-  coin_code TEXT DEFAULT 'USDT',
-  status TEXT DEFAULT 'pending',
-  delivery_code TEXT,
-  escrow_tx TEXT,
-  address TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Paiements
-CREATE TABLE payments (
-  id UUID PRIMARY KEY,
-  order_id UUID REFERENCES orders(id),
-  payer_did TEXT,
-  amount DECIMAL NOT NULL,
-  coin_code TEXT,
-  tx_hash TEXT,
-  status TEXT DEFAULT 'escrow',
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Messages
-CREATE TABLE messages (
-  id UUID PRIMARY KEY,
-  sender_did TEXT,
-  receiver_did TEXT,
-  order_id UUID REFERENCES orders(id),
-  content TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Tickets Jackpot
-CREATE TABLE jackpot_tickets (
-  id UUID PRIMARY KEY,
-  user_did TEXT REFERENCES users(did),
-  week_date DATE NOT NULL,
-  ticket_count INTEGER DEFAULT 0,
-  earned_dtc DECIMAL DEFAULT 0
-);
-```
-
-### Connexion Supabase dans l'app:
-```javascript
-import { createClient } from '@supabase/supabase-js';
-const supabase = createClient(
-  'https://YOUR_PROJECT.supabase.co',
-  'YOUR_ANON_KEY'
-);
-```
-
----
-
-## 🌍 MULTILANGUE
-
-```javascript
-// Détection automatique
-const lang = await window.delta.languageCode();
-
-// Traduction
-const translated = await window.delta.translateText("Hello", lang);
-```
-
----
-
-## 💱 CONVERSION PRIX
-
-```
-1 DTC ≈ 650 FCFA (à ajuster selon taux en temps réel)
-Prix vendeur (FCFA) ÷ 650 = Prix en DTC
-```
-
----
-
-## 📱 FONCTIONNALITÉS IMPLÉMENTÉES
-
-| Fonctionnalité | Status |
+### Screens (16)
+| Screen | Description |
 |---|---|
-| Authentification Delta | ✅ |
-| Rôles (Acheteur/Vendeur/Livreur) | ✅ |
-| Marketplace produits | ✅ |
-| Palace Food (restaurants) | ✅ |
-| Panier & Paiement escrow | ✅ |
-| Suivi commande (étapes) | ✅ |
-| Chat intégré | ✅ |
-| Assistante Ema (IA) | ✅ |
-| Jackpot dimanche 20h GMT | ✅ |
-| Système tickets pub | ✅ |
-| Récompense 0.01 USDT/DTC | ✅ |
-| Countdown jackpot temps réel | ✅ |
-| Conversion FCFA ↔ DTC | ✅ |
-| Multicoins (USDT/DTC/ICP) | ✅ |
-| Code livraison sécurisé | ✅ |
-| Tableau de bord vendeur | ✅ |
-| Notifications | ✅ |
-| Mode sombre luxe (Or/Rouge/Blanc) | ✅ |
+| `screen-splash` | Écran de chargement |
+| `screen-auth` | Connexion Delta |
+| `screen-home` | Accueil marketplace |
+| `screen-search` | Recherche & Explorer |
+| `screen-orders` | Commandes & Tracking |
+| `screen-chat` | Messagerie |
+| `screen-chat-conv` | Conversation individuelle |
+| `screen-profile` | Profil utilisateur |
+| `screen-cart` | Panier |
+| `screen-seller` | Dashboard vendeur |
+| `screen-seller-setup` | Configuration établissement |
+| `screen-delivery` | Dashboard livreur |
+| `screen-jackpot` | Palace Jackpot |
+| `screen-notifs` | Notifications |
+| `screen-addresses` | Adresses de livraison |
+| `screen-settings` | Paramètres |
 
 ---
 
-## 🎨 DESIGN SYSTEM
+## 🛠 Stack Technique
 
-**Couleurs:**
-- Or principal: `#D4AF37`
-- Rouge accent: `#C0392B`
-- Fond: `#0D0A06` (noir profond)
-- Surface: `#221C0E`
-
-**Typographie:**
-- Display: `Cormorant Garamond` (élégant, luxe)
-- Body: `DM Sans` (moderne, lisible)
+| Composant | Technologie |
+|---|---|
+| Frontend | HTML5 · CSS3 · JavaScript ES2022 |
+| Auth | Delta SDK (`authByIdentToken`) |
+| Base de données | Supabase (PostgreSQL) |
+| Storage | Supabase Storage (buckets `logos` + `products`) |
+| Backend | Supabase Edge Functions (Deno) |
+| Paiements | Delta Wallet SDK (`walletPayment`) |
+| Auth bridge | Supabase Anonymous sign-ins |
 
 ---
 
-## 📞 SUPPORT
+## 🗄 Base de données Supabase
 
-Pour toute question technique, contacter l'équipe Palace Market.
+### Tables
+
+| Table | Description |
+|---|---|
+| `users` | Profils utilisateurs liés au DID Delta |
+| `products` | Produits et plats des vendeurs |
+| `stores` | Restaurants et boutiques |
+| `orders` | Commandes avec statut et tracking |
+| `messages` | Messagerie acheteur ↔ vendeur ↔ livreur |
+| `addresses` | Adresses de livraison des acheteurs |
+| `jackpot_winners` | Historique des gagnants du jackpot |
+
+### Storage Buckets
+
+| Bucket | Accès | Usage |
+|---|---|---|
+| `logos` | Public | Photos de profil des établissements |
+| `products` | Public | Photos des produits et plats |
+
+---
+
+## 🔐 Sécurité
+
+### Architecture d'authentification
+```
+Delta DID (signé cryptographiquement)
+    ↓
+window.delta.authByIdentToken()
+    ↓
+supabase.auth.signInAnonymously()  →  UUID Supabase unique
+    ↓
+DB.setAuthToken(jwt)  →  auth.uid() valide dans RLS
+    ↓
+RLS : auth.uid() = user_id  →  chaque user ne touche que ses données
+```
+
+### Row Level Security (RLS)
+- ✅ Activé sur toutes les tables sensibles
+- `users` — lecture/modification par propriétaire uniquement
+- `stores` — lecture publique, write par propriétaire (`auth.uid() = user_id`)
+- `orders` — acheteur et vendeur concernés uniquement
+- `products` — lecture publique, write par vendeur propriétaire
+- `addresses` — propriétaire uniquement
+- `jackpot_winners` — lecture publique, write backend uniquement
+
+### Edge Function `update-balance`
+- Modification du solde `dtc_balance` **uniquement côté serveur**
+- Vérification JWT obligatoire (`auth.getUser()`)
+- Montant max par appel : 10 000
+- Empêche les soldes négatifs
+
+### Protections client-side
+- Sanitisation anti-XSS sur toutes les données utilisateur (`sanitize()`)
+- Validation des formulaires (longueur, type, limites)
+- Cache mémoire avec TTL 60s pour réduire les requêtes
+
+---
+
+## ⚙️ Configuration
+
+```javascript
+// index.html — CONFIG object
+const CONFIG = {
+  DELTA_APP_ID:   29,
+  SUPABASE_URL:   'https://onnzwrglpfkezuzimlba.supabase.co',
+  SUPABASE_KEY:   'eyJ...',        // Clé anon publique (normale dans un frontend)
+  DTC_TO_FCFA:    650,             // Taux de conversion — à mettre à jour
+  ESCROW_ADDRESS: 'palace-escrow-29',
+};
+```
+
+---
+
+## 🚀 Déploiement
+
+### 1. Mini App Delta
+```
+Delta Developer Portal
+  → App ID : 29
+  → Upload : palace-market-delta.zip (index.html + .version)
+  → Publier
+```
+
+### 2. Edge Function
+```bash
+# Installer Supabase CLI
+npm install -g supabase
+
+# Lier le projet
+supabase login
+supabase link --project-ref onnzwrglpfkezuzimlba
+
+# Déployer
+supabase functions deploy update-balance
+```
+
+### 3. Supabase — Prérequis
+- Authentication → Providers → **Anonymous** → Enable ✅
+- Exécuter les scripts SQL (`/sql/`)
+- Storage buckets `logos` et `products` créés et publics
+
+---
+
+## 🔄 Versioning
+
+| Version | Changements majeurs |
+|---|---|
+| 1.20 | Sécurité RLS stores · Bridge Delta↔Supabase Auth |
+| 1.19 | Fix "Session expirée" · saveSellerConfig sans blocage dur |
+| 1.18 | Pont JWT Delta DID ↔ Supabase anonymous session |
+| 1.17 | Corrections uploadées depuis corrections manuelles |
+| 1.16 | Clé anon JWT · Edge Function update-balance · fetchUserData |
+| 1.15 | Renommage `type` → `store_type` (compatibilité Supabase) |
+| 1.14 | Solde réel · restaurants dynamiques · tracking live · images produits |
+| 1.13 | Fix bucket Storage SQL |
+| 1.12 | Audit sécurité · cache mémoire · sanitize XSS · adresses dynamiques |
+| 1.11 | `.maybeSingle()` · upsert · guard DID |
+| 1.10 | Structure `div#app` correcte · splash/auth hors app |
+| 1.09 | Connexion Supabase SDK · `loadProducts()` dynamique |
+
+---
+
+## 📋 Checklist de mise en production
+
+- [ ] Anonymous sign-ins activé dans Supabase
+- [ ] RLS activé sur toutes les tables
+- [ ] Edge Function `update-balance` déployée
+- [ ] Buckets Storage `logos` et `products` créés publics
+- [ ] Taux `DTC_TO_FCFA` mis à jour dynamiquement
+- [ ] Adresse escrow `ESCROW_ADDRESS` vérifiée
+- [ ] Tests paiement Delta Wallet en environnement réel
+
+---
+
+## 👤 Auteur
+
+**Palace Market** — Mini App Delta premium  
+App ID : `29` · Supabase Project : `onnzwrglpfkezuzimlba`
